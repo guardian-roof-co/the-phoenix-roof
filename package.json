@@ -1,0 +1,46 @@
+{
+  "name": "the-phoenix-roof",
+  "version": "1.0.0",
+  "description": "Premium Roofing & Exteriors Application",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "server": "node server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@google/genai": "^1.30.0",
+    "@google-cloud/storage": "^7.7.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "fast-csv": "^5.0.0",
+    "firebase": "^10.8.0",
+    "lucide-react": "^0.263.1",
+    "pg": "^8.11.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-markdown": "^9.0.0",
+    "web-vitals": "^2.1.4"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "typescript": "^5.0.2",
+    "vite": "^4.3.9",
+    "@types/node": "^22.0.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

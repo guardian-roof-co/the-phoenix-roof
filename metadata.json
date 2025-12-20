@@ -1,0 +1,9 @@
+{
+  "name": "The Phoenix Roof - Instant Quote & AI Review",
+  "description": "A comprehensive roofing application featuring instant automated quotes with aerial visualization, AI-powered insurance policy review, and maintenance plan scheduling.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
