@@ -52,6 +52,14 @@ export const Signup: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        // Helper to get HubSpot tracking cookie
+        const getCookie = (name: string) => {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop()?.split(';').shift();
+        };
+        const hutk = getCookie('hubspotutk');
+
         if (!validate()) {
             return;
         }
@@ -71,7 +79,9 @@ export const Signup: React.FC = () => {
                     phone,
                     zip,
                     privacyConsent,
-                    leadSource: 'Website Signup Page'
+                    leadSource: 'Website Signup Page',
+                    pageUri: window.location.href,
+                    hutk
                 })
             });
 

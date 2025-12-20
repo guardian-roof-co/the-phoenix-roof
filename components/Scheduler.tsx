@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CheckCircle, Loader2, Video, MapPin, Calendar, Clock, User, Phone, Mail, ExternalLink, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { syncToHubSpot } from '../services/hubspotService';
 
 // REPLACE THIS with your actual Google Calendar Appointment Schedule URL
 const GOOGLE_CALENDAR_BOOKING_URL = 'https://calendar.google.com/calendar/u/0/appointments/schedules/PASTE_YOUR_LINK_HERE';
@@ -46,25 +45,42 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
+    // Helper to get HubSpot tracking cookie
+    const getCookie = (name: string) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop()?.split(';').shift();
+    };
+    const hutk = getCookie('hubspotutk');
+
     const names = name.trim().split(' ');
     const firstName = names[0];
     const lastName = names.length > 1 ? names.slice(1).join(' ') : 'Lead';
 
-    const fullNotes = meetingType === 'virtual' 
+    const fullNotes = meetingType === 'virtual'
       ? `VIRTUAL BOOKING REQUESTED - REDIRECTED TO GOOGLE CALENDAR.\n\nNotes: ${notes}`
       : `Requested: ${date} at ${time}. Interaction: ${meetingType}. Notes: ${notes}`;
 
-    // 1. HubSpot Sync for Operations Team
-    await syncToHubSpot({
-      email,
-      firstname: firstName,
-      lastname: lastName,
-      phone,
-      address,
-      notes: fullNotes,
-      lead_source: `Website Scheduler (${meetingType})`
-    });
+    // 1. HubSpot Sync for Operations Team (via Backend Bridge)
+    try {
+      await fetch('/api/quotes-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          firstName,
+          lastName,
+          phone,
+          leadSource: `Website Scheduler (${meetingType})`,
+          pageUri: window.location.href,
+          pageName: 'Scheduler',
+          hutk
+        })
+      });
+    } catch (e) {
+      console.warn('[HubSpot Bridge Error]', e);
+    }
 
     // 2. Local State update
     addAppointment({
@@ -96,8 +112,8 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
           {meetingType === 'virtual' ? 'Opening Calendar...' : 'Request Logged'}
         </h2>
         <p className="text-lg text-slate-600 mb-8 font-medium">
-          {meetingType === 'virtual' 
-            ? "Our operations team has your details. We've opened Google Calendar for you to pick an exact time." 
+          {meetingType === 'virtual'
+            ? "Our operations team has your details. We've opened Google Calendar for you to pick an exact time."
             : `Your request is with our Grand Rapids operations team. We'll call ${phone} to confirm your slot.`
           }
         </p>
@@ -106,9 +122,9 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
             Go Back
           </button>
           {meetingType === 'virtual' && (
-            <a 
-              href={GOOGLE_CALENDAR_BOOKING_URL} 
-              target="_blank" 
+            <a
+              href={GOOGLE_CALENDAR_BOOKING_URL}
+              target="_blank"
               rel="noopener noreferrer"
               className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-700 transition shadow-xl flex items-center justify-center gap-2"
             >
@@ -124,8 +140,8 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
     <div className="max-w-4xl mx-auto px-4 py-16 mt-10">
       <div className="text-center mb-12">
         <div className="inline-flex items-center gap-2 bg-slate-100 px-4 py-1.5 rounded-full mb-6">
-           <ShieldCheck className="w-4 h-4 text-phoenix-600" />
-           <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">616 Ops Connection</span>
+          <ShieldCheck className="w-4 h-4 text-phoenix-600" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">616 Ops Connection</span>
         </div>
         <h2 className="text-4xl font-black text-slate-900 italic uppercase tracking-tighter">Book Your 616 Visit</h2>
         <p className="mt-4 text-slate-500 font-medium max-w-lg mx-auto leading-relaxed">Schedule a free roof assessment with our local Grand Rapids operations team.</p>
@@ -134,22 +150,22 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
       <div className="bg-white rounded-[3.5rem] shadow-2xl border border-slate-100 overflow-hidden">
         <form onSubmit={handleSubmit} className="p-10 md:p-16 space-y-10">
           <div className="flex justify-center mb-4">
-              <div className="bg-slate-100 p-2 rounded-2xl inline-flex shadow-inner">
-                  <button 
-                    type="button" 
-                    onClick={() => setMeetingType('in-person')} 
-                    className={`flex items-center gap-3 px-8 py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${meetingType === 'in-person' ? 'bg-white shadow-md text-phoenix-600' : 'text-slate-500 hover:text-slate-700'}`}
-                  >
-                      <MapPin className="w-4 h-4" /> In-Person
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={() => setMeetingType('virtual')} 
-                    className={`flex items-center gap-3 px-8 py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${meetingType === 'virtual' ? 'bg-white shadow-md text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
-                  >
-                      <Video className="w-4 h-4" /> Virtual Booking
-                  </button>
-              </div>
+            <div className="bg-slate-100 p-2 rounded-2xl inline-flex shadow-inner">
+              <button
+                type="button"
+                onClick={() => setMeetingType('in-person')}
+                className={`flex items-center gap-3 px-8 py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${meetingType === 'in-person' ? 'bg-white shadow-md text-phoenix-600' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                <MapPin className="w-4 h-4" /> In-Person
+              </button>
+              <button
+                type="button"
+                onClick={() => setMeetingType('virtual')}
+                className={`flex items-center gap-3 px-8 py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${meetingType === 'virtual' ? 'bg-white shadow-md text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                <Video className="w-4 h-4" /> Virtual Booking
+              </button>
+            </div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-10">
@@ -181,14 +197,14 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
               <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Property Address</label>
               <div className="relative">
                 <MapPin className="absolute left-5 top-5 w-5 h-5 text-slate-300" />
-                <input 
+                <input
                   ref={addressRef}
-                  required 
-                  type="text" 
-                  value={address} 
-                  onChange={(e) => setAddress(e.target.value)} 
-                  className="w-full pl-14 pr-6 py-5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-phoenix-50 outline-none font-bold placeholder-slate-400" 
-                  placeholder="Grand Rapids Address..." 
+                  required
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="w-full pl-14 pr-6 py-5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-phoenix-50 outline-none font-bold placeholder-slate-400"
+                  placeholder="Grand Rapids Address..."
                 />
               </div>
             </div>
@@ -196,7 +212,7 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
 
           {meetingType === 'in-person' ? (
             <div className="grid md:grid-cols-2 gap-10 animate-fade-in">
-               <div className="space-y-2">
+              <div className="space-y-2">
                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Preferred Date</label>
                 <div className="relative">
                   <Calendar className="absolute left-5 top-5 w-5 h-5 text-slate-300 pointer-events-none" />
@@ -217,11 +233,11 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
             </div>
           ) : (
             <div className="bg-blue-50 p-8 rounded-[2.5rem] border border-blue-100 flex items-start gap-5 animate-fade-in shadow-inner">
-               <Calendar className="w-8 h-8 text-blue-600 flex-shrink-0 mt-1" />
-               <div>
-                  <p className="font-black text-blue-900 uppercase text-xs tracking-widest mb-2">Instant Virtual Booking</p>
-                  <p className="text-blue-700 text-sm font-medium leading-relaxed">Pick your exact 15-minute slot on our operations calendar after submitting this form. We'll send you the video link immediately.</p>
-               </div>
+              <Calendar className="w-8 h-8 text-blue-600 flex-shrink-0 mt-1" />
+              <div>
+                <p className="font-black text-blue-900 uppercase text-xs tracking-widest mb-2">Instant Virtual Booking</p>
+                <p className="text-blue-700 text-sm font-medium leading-relaxed">Pick your exact 15-minute slot on our operations calendar after submitting this form. We'll send you the video link immediately.</p>
+              </div>
             </div>
           )}
 
@@ -230,19 +246,18 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full p-8 bg-slate-50 border border-slate-200 rounded-[2.5rem] outline-none focus:ring-4 focus:ring-phoenix-50 h-40 font-medium placeholder-slate-400 shadow-inner" placeholder="Describe any leaks, damage, or specific requests for our team..."></textarea>
           </div>
 
-          <button 
-            type="submit" 
-            disabled={isSubmitting} 
-            className={`w-full text-white font-black py-6 rounded-[2.5rem] transition-all text-lg flex items-center justify-center gap-3 uppercase tracking-widest shadow-2xl active:scale-[0.98] ${
-              meetingType === 'virtual' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-200' : 'bg-slate-900 hover:bg-black shadow-slate-200'
-            }`}
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className={`w-full text-white font-black py-6 rounded-[2.5rem] transition-all text-lg flex items-center justify-center gap-3 uppercase tracking-widest shadow-2xl active:scale-[0.98] ${meetingType === 'virtual' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-200' : 'bg-slate-900 hover:bg-black shadow-slate-200'
+              }`}
           >
             {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : (
               meetingType === 'virtual' ? "Continue to Calendar" : "Request Free Inspection"
             )}
             {meetingType === 'virtual' && !isSubmitting && <ExternalLink className="w-5 h-5" />}
           </button>
-          
+
           <div className="flex items-center justify-center gap-4 text-[10px] text-slate-400 font-black uppercase tracking-widest">
             <div className="h-px bg-slate-200 w-12"></div>
             Direct Sync with Grand Rapids Operations

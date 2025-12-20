@@ -1,5 +1,6 @@
 
 const express = require('express');
+require('dotenv').config();
 const { Pool } = require('pg');
 const { Storage } = require('@google-cloud/storage');
 const csv = require('fast-csv');
@@ -23,8 +24,13 @@ const pool = new Pool({
     database: process.env.DB_NAME || 'guardian-prod',
     password: process.env.DB_PASSWORD || 'postgres123',
     port: parseInt(process.env.DB_PORT || '5432'),
-    // For Cloud SQL with public IP, you might need SSL depends on configuration
-    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
+    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+    connectionTimeoutMillis: 5000
+});
+
+// Diagnostic check for DB connectivity
+pool.on('error', (err) => {
+    console.error('[Database Pool Error] Check your local Postgres credentials:', err.message);
 });
 
 // 2. Google Cloud Storage Config
@@ -46,9 +52,9 @@ const syncToHubSpot = async (leadData) => {
     }
 
     try {
-        console.log(`[HubSpot] Syncing lead: ${leadData.email}`);
+        console.log(`[HubSpot] Syncing lead: ${leadData.email} | IP: ${leadData.ipAddress || 'unknown'} | URI: ${leadData.pageUri || 'FALLBACK'}`);
         const fields = [
-            { name: 'email', value: leadData.email },
+            { name: 'email', value: leadData.email || 'pending@user.quote' },
             { name: 'firstname', value: leadData.firstName || '' },
             { name: 'lastname', value: leadData.lastName || '' },
             { name: 'mobilephone', value: leadData.phone || '' },
@@ -61,21 +67,33 @@ const syncToHubSpot = async (leadData) => {
             submittedAt: Date.now(),
             fields,
             context: {
-                pageUri: leadData.pageUri || 'https://thephoenixroof.com/signup',
-                pageName: 'Signup'
+                pageUri: leadData.pageUri || 'https://thephoenixroof.com/form-submission',
+                pageName: leadData.pageName || 'Website Interaction',
+                ipAddress: leadData.ipAddress, // CRITICAL: Helps prevent spam flagging
+                hutk: leadData.hutk // Optional cookie for session merging
             }
         };
 
         const endpoint = `https://api.hsforms.com/submissions/v3/integration/submit/${HUBSPOT_PORTAL_ID}/${HUBSPOT_FORM_ID}`;
+
+        // Add a timeout to prevent hanging the whole request
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
+            signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
             const err = await response.json();
             console.error('[HubSpot Error]', err);
+        } else {
+            console.log(`[HubSpot] Sync successful for: ${leadData.email}`);
         }
         return response.ok;
     } catch (error) {
@@ -272,7 +290,9 @@ app.post('/api/quotes', async (req, res) => {
 
 // User Signups API
 app.post('/api/signups', async (req, res) => {
-    const { firstName, lastName, email, phone, zip, privacyConsent, leadSource } = req.body;
+    const { firstName, lastName, email, phone, zip, privacyConsent, leadSource, pageUri } = req.body;
+    const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+
     try {
         console.log(`[Persistence] Logging signup for: ${email}`);
 
@@ -291,11 +311,18 @@ app.post('/api/signups', async (req, res) => {
 
         // 2. HubSpot CRM Sync (Server-Side)
         const hubspotPromise = syncToHubSpot({
-            firstName, lastName, email, phone, zip, privacyConsent, leadSource
+            firstName, lastName, email, phone, zip, privacyConsent, leadSource,
+            ipAddress,
+            pageUri,
+            pageName: 'Signup'
         });
 
         const [dbRes, hubspotOk] = await Promise.allSettled([dbPromise, hubspotPromise]);
 
+        console.log(`[Signup Sync] DB Persistence: ${dbRes.status === 'fulfilled' ? 'OK' : 'FAILED (' + dbRes.reason.message + ')'}`);
+        console.log(`[Signup Sync] HubSpot CRM: ${hubspotOk.status === 'fulfilled' && hubspotOk.value ? 'OK' : 'FAILED'}`);
+
+        // Success if EITHER worked (this allows local testing without a DB)
         const success = (dbRes.status === 'fulfilled') || (hubspotOk.status === 'fulfilled' && hubspotOk.value === true);
 
         if (success) {
@@ -306,6 +333,22 @@ app.post('/api/signups', async (req, res) => {
     } catch (err) {
         console.error("Signup Processing Error:", err);
         res.status(500).json({ error: "Failed to process signup" });
+    }
+});
+
+// HubSpot Bridge for Instant Quotes
+app.post('/api/quotes-sync', async (req, res) => {
+    try {
+        const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+        const success = await syncToHubSpot({
+            ...req.body,
+            ipAddress,
+            pageName: req.body.pageName || 'Quote'
+        });
+        res.json({ success });
+    } catch (err) {
+        console.error("Quotes Sync Error:", err);
+        res.status(500).json({ error: "Failed to sync quote" });
     }
 });
 
@@ -360,7 +403,10 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Phoenix Roof API running on http://localhost:${PORT}`);
+    console.log(`Phoenix Roof API running on http://127.0.0.1:${PORT}`);
+    console.log(`- DB_HOST: ${process.env.DB_HOST || 'localhost'}`);
+    console.log(`- DB_PORT: ${process.env.DB_PORT || '5432'}`);
+    console.log(`- DB_USER: ${process.env.DB_USER || 'postgres'}`);
     initDB().then(() => {
         // Uncomment to force sync on start
         // syncAllBucketData(); 
