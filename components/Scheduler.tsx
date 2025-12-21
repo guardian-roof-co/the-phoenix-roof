@@ -14,7 +14,8 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { addAppointment } = useAuth();
 
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
@@ -54,10 +55,6 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
     };
     const hutk = getCookie('hubspotutk');
 
-    const names = name.trim().split(' ');
-    const firstName = names[0];
-    const lastName = names.length > 1 ? names.slice(1).join(' ') : 'Lead';
-
     const fullNotes = meetingType === 'virtual'
       ? `VIRTUAL BOOKING REQUESTED - REDIRECTED TO GOOGLE CALENDAR.\n\nNotes: ${notes}`
       : `Requested: ${date} at ${time}. Interaction: ${meetingType}. Notes: ${notes}`;
@@ -72,6 +69,10 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
           firstName,
           lastName,
           phone,
+          address,
+          date,
+          time,
+          notes,
           leadSource: `Website Scheduler (${meetingType})`,
           pageUri: window.location.href,
           pageName: 'Scheduler',
@@ -84,7 +85,7 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
 
     // 2. Local State update
     addAppointment({
-      userName: name,
+      userName: `${firstName} ${lastName}`,
       userEmail: email,
       userPhone: phone,
       date,
@@ -170,12 +171,22 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
 
           <div className="grid md:grid-cols-2 gap-10">
             <div className="space-y-2">
-              <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Full Name</label>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">First Name</label>
               <div className="relative">
                 <User className="absolute left-5 top-5 w-5 h-5 text-slate-300" />
-                <input required type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-phoenix-50 outline-none font-bold placeholder-slate-400" placeholder="First & Last Name" />
+                <input required type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-phoenix-50 outline-none font-bold placeholder-slate-400" placeholder="First Name" />
               </div>
             </div>
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Last Name</label>
+              <div className="relative">
+                <User className="absolute left-5 top-5 w-5 h-5 text-slate-300" />
+                <input required type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-phoenix-50 outline-none font-bold placeholder-slate-400" placeholder="Last Name" />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-10">
             <div className="space-y-2">
               <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Phone Number</label>
               <div className="relative">
@@ -183,9 +194,7 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
                 <input required type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-phoenix-50 outline-none font-bold placeholder-slate-400" placeholder="(616) 555-0123" />
               </div>
             </div>
-          </div>
 
-          <div className="grid md:grid-cols-2 gap-10">
             <div className="space-y-2">
               <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Email Address</label>
               <div className="relative">
@@ -193,20 +202,21 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
                 <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-phoenix-50 outline-none font-bold placeholder-slate-400" placeholder="you@example.com" />
               </div>
             </div>
-            <div className="space-y-2">
-              <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Property Address</label>
-              <div className="relative">
-                <MapPin className="absolute left-5 top-5 w-5 h-5 text-slate-300" />
-                <input
-                  ref={addressRef}
-                  required
-                  type="text"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className="w-full pl-14 pr-6 py-5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-phoenix-50 outline-none font-bold placeholder-slate-400"
-                  placeholder="Grand Rapids Address..."
-                />
-              </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Property Address</label>
+            <div className="relative">
+              <MapPin className="absolute left-5 top-5 w-5 h-5 text-slate-300" />
+              <input
+                ref={addressRef}
+                required
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className="w-full pl-14 pr-6 py-5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-phoenix-50 outline-none font-bold placeholder-slate-400"
+                placeholder="Grand Rapids Address..."
+              />
             </div>
           </div>
 

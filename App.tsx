@@ -266,7 +266,7 @@ function AppContent() {
             <div className="flex flex-col md:items-end gap-4">
               <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800">
                 <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1">616 Support Line</p>
-                <p className="text-white font-black text-xl tracking-tighter italic">616-555-ROOF</p>
+                <p className="text-white font-black text-xl tracking-tighter italic">616-319-HAIL</p>
               </div>
             </div>
           </div>

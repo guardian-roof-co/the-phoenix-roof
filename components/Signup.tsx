@@ -92,7 +92,7 @@ export const Signup: React.FC = () => {
             }
         } catch (err) {
             console.error("Signup Error:", err);
-            alert("There was an issue creating your account. Please try again or call 616-555-ROOF.");
+            alert("There was an issue creating your account. Please try again or call 616-319-HAIL.");
         } finally {
             setIsSubmitting(false);
         }

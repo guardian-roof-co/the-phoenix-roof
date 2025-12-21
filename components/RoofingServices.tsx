@@ -49,7 +49,7 @@ const SERVICES = [
       'Leak Detection Experts',
       'Ice Dam Protection'
     ],
-    cta: 'Call 616-555-ROOF',
+    cta: 'Call 616-319-HAIL',
     color: 'border-slate-800 bg-slate-50'
   }
 ];
@@ -59,14 +59,14 @@ export const RoofingServices: React.FC<RoofingServicesProps> = ({ onSchedule, on
     <section className="py-20 bg-white relative overflow-hidden">
       {/* Subtle Background Elements */}
       <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-phoenix-100 rounded-full blur-3xl opacity-30"></div>
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        
+
         {/* Local Header */}
         <div className="text-center mb-16">
           <div className="flex items-center justify-center gap-2 mb-4">
-             <MapPin className="w-5 h-5 text-phoenix-600" />
-             <span className="text-sm font-black text-phoenix-600 uppercase tracking-widest">Proudly Serving Kent County</span>
+            <MapPin className="w-5 h-5 text-phoenix-600" />
+            <span className="text-sm font-black text-phoenix-600 uppercase tracking-widest">Proudly Serving Kent County</span>
           </div>
           <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-6 tracking-tighter">
             West Michigan's <br />
@@ -79,42 +79,42 @@ export const RoofingServices: React.FC<RoofingServicesProps> = ({ onSchedule, on
 
         {/* Value Comparison Bar */}
         <div className="bg-slate-50 rounded-3xl p-6 md:p-8 mb-16 border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-8">
-           <div className="flex items-center gap-6">
-              <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                 <DollarSign className="w-8 h-8 text-green-600" />
-              </div>
-              <div>
-                 <h4 className="font-black text-slate-900 uppercase tracking-wider text-sm">The Local Advantage</h4>
-                 <p className="text-slate-500 text-sm">Save 15-20% compared to national franchises</p>
-              </div>
-           </div>
-           <div className="h-px w-full md:w-px md:h-12 bg-slate-200"></div>
-           <div className="flex items-center gap-6">
-              <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                 <Award className="w-8 h-8 text-phoenix-500" />
-              </div>
-              <div>
-                 <h4 className="font-black text-slate-900 uppercase tracking-wider text-sm">Certified Quality</h4>
-                 <p className="text-slate-500 text-sm">Master Elite installers using top-tier materials</p>
-              </div>
-           </div>
-           <div className="h-px w-full md:w-px md:h-12 bg-slate-200"></div>
-           <div className="flex items-center gap-6">
-              <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                 <ThumbsUp className="w-8 h-8 text-fire-500" />
-              </div>
-              <div>
-                 <h4 className="font-black text-slate-900 uppercase tracking-wider text-sm">Trusted History</h4>
-                 <p className="text-slate-500 text-sm">500+ Grand Rapids homes protected & counting</p>
-              </div>
-           </div>
+          <div className="flex items-center gap-6">
+            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+              <DollarSign className="w-8 h-8 text-green-600" />
+            </div>
+            <div>
+              <h4 className="font-black text-slate-900 uppercase tracking-wider text-sm">The Local Advantage</h4>
+              <p className="text-slate-500 text-sm">Save 15-20% compared to national franchises</p>
+            </div>
+          </div>
+          <div className="h-px w-full md:w-px md:h-12 bg-slate-200"></div>
+          <div className="flex items-center gap-6">
+            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+              <Award className="w-8 h-8 text-phoenix-500" />
+            </div>
+            <div>
+              <h4 className="font-black text-slate-900 uppercase tracking-wider text-sm">Certified Quality</h4>
+              <p className="text-slate-500 text-sm">Master Elite installers using top-tier materials</p>
+            </div>
+          </div>
+          <div className="h-px w-full md:w-px md:h-12 bg-slate-200"></div>
+          <div className="flex items-center gap-6">
+            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+              <ThumbsUp className="w-8 h-8 text-fire-500" />
+            </div>
+            <div>
+              <h4 className="font-black text-slate-900 uppercase tracking-wider text-sm">Trusted History</h4>
+              <p className="text-slate-500 text-sm">500+ Grand Rapids homes protected & counting</p>
+            </div>
+          </div>
         </div>
 
         {/* Services Grid */}
         <div className="grid lg:grid-cols-3 gap-8 mb-16">
           {SERVICES.map((service) => (
-            <div 
-              key={service.id} 
+            <div
+              key={service.id}
               className={`flex flex-col p-8 rounded-[2.5rem] border-2 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 group ${service.color}`}
             >
               <div className="mb-6">
@@ -140,17 +140,16 @@ export const RoofingServices: React.FC<RoofingServicesProps> = ({ onSchedule, on
                 ))}
               </ul>
 
-              <button 
+              <button
                 onClick={() => {
-                   if (service.id === 'insurance' && onNavigate) onNavigate('storm');
-                   else if (service.id === 'retail' && onNavigate) onNavigate('quote');
-                   else onSchedule();
+                  if (service.id === 'insurance' && onNavigate) onNavigate('storm');
+                  else if (service.id === 'retail' && onNavigate) onNavigate('quote');
+                  else onSchedule();
                 }}
-                className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 ${
-                  service.id === 'insurance' ? 'bg-fire-600 hover:bg-fire-700 text-white shadow-fire-200' :
-                  service.id === 'retail' ? 'bg-phoenix-600 hover:bg-phoenix-700 text-white shadow-phoenix-200' :
-                  'bg-slate-900 hover:bg-slate-800 text-white'
-                }`}
+                className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 ${service.id === 'insurance' ? 'bg-fire-600 hover:bg-fire-700 text-white shadow-fire-200' :
+                    service.id === 'retail' ? 'bg-phoenix-600 hover:bg-phoenix-700 text-white shadow-phoenix-200' :
+                      'bg-slate-900 hover:bg-slate-800 text-white'
+                  }`}
               >
                 {service.cta} <ArrowRight className="w-4 h-4" />
               </button>
@@ -160,37 +159,37 @@ export const RoofingServices: React.FC<RoofingServicesProps> = ({ onSchedule, on
 
         {/* Local Pride CTA */}
         <div className="bg-slate-900 rounded-[3rem] p-10 md:p-16 relative overflow-hidden text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-10">
-           <div className="relative z-10 max-w-xl">
-              <div className="inline-flex items-center gap-2 text-phoenix-400 font-bold mb-4 uppercase tracking-[0.2em] text-xs">
-                 <Snowflake className="w-4 h-4" /> Built for the 616
-              </div>
-              <h3 className="text-3xl md:text-5xl font-black text-white mb-6 leading-[1.1] tracking-tighter">
-                 Stop paying for <br />
-                 the CEO's jet.
-              </h3>
-              <p className="text-slate-300 text-lg font-medium">
-                 When you choose The Phoenix Roof, your money stays in Grand Rapids. No middleman, no hidden fees, just honest local craft.
-              </p>
-           </div>
-           
-           <div className="relative z-10 flex flex-col gap-4 w-full md:w-auto min-w-[320px]">
-              <button 
-                onClick={onSchedule}
-                className="bg-white hover:bg-phoenix-50 text-slate-900 px-8 py-5 rounded-2xl font-black uppercase tracking-widest transition transform hover:scale-105 shadow-2xl flex items-center justify-center gap-3 group"
-              >
-                 Schedule Local Estimate
-                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
-              <div className="text-center md:text-right">
-                 <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Support West Michigan</p>
-                 <p className="text-white text-[10px] font-bold mt-1 opacity-60">
-                    Grand Rapids • Ada • Cascade • Forest Hills
-                 </p>
-              </div>
-           </div>
+          <div className="relative z-10 max-w-xl">
+            <div className="inline-flex items-center gap-2 text-phoenix-400 font-bold mb-4 uppercase tracking-[0.2em] text-xs">
+              <Snowflake className="w-4 h-4" /> Built for the 616
+            </div>
+            <h3 className="text-3xl md:text-5xl font-black text-white mb-6 leading-[1.1] tracking-tighter">
+              Stop paying for <br />
+              the CEO's jet.
+            </h3>
+            <p className="text-slate-300 text-lg font-medium">
+              When you choose The Phoenix Roof, your money stays in Grand Rapids. No middleman, no hidden fees, just honest local craft.
+            </p>
+          </div>
 
-           {/* Decor */}
-           <div className="absolute top-0 right-0 w-80 h-80 bg-phoenix-600 rounded-full blur-[120px] opacity-20 -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative z-10 flex flex-col gap-4 w-full md:w-auto min-w-[320px]">
+            <button
+              onClick={onSchedule}
+              className="bg-white hover:bg-phoenix-50 text-slate-900 px-8 py-5 rounded-2xl font-black uppercase tracking-widest transition transform hover:scale-105 shadow-2xl flex items-center justify-center gap-3 group"
+            >
+              Schedule Local Estimate
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </button>
+            <div className="text-center md:text-right">
+              <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Support West Michigan</p>
+              <p className="text-white text-[10px] font-bold mt-1 opacity-60">
+                Grand Rapids • Ada • Cascade • Forest Hills
+              </p>
+            </div>
+          </div>
+
+          {/* Decor */}
+          <div className="absolute top-0 right-0 w-80 h-80 bg-phoenix-600 rounded-full blur-[120px] opacity-20 -translate-y-1/2 translate-x-1/2"></div>
         </div>
       </div>
     </section>

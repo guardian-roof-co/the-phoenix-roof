@@ -52,7 +52,7 @@ const syncToHubSpot = async (leadData) => {
     }
 
     try {
-        console.log(`[HubSpot] Syncing lead: ${leadData.email} | IP: ${leadData.ipAddress || 'unknown'} | URI: ${leadData.pageUri || 'FALLBACK'}`);
+        console.log(`[HubSpot] Syncing lead: ${leadData.email} | IP: ${leadData.ipAddress || 'unknown'} | URI: ${leadData.pageUri || 'https://roofbyphoenix.com/form-submission (fallback)'}`);
         const fields = [
             { name: 'email', value: leadData.email || 'pending@user.quote' },
             { name: 'firstname', value: leadData.firstName || '' },
@@ -61,13 +61,17 @@ const syncToHubSpot = async (leadData) => {
             { name: 'zip', value: leadData.zip || '' },
             { name: 'privacy_consent', value: leadData.privacyConsent ? 'true' : 'false' },
             { name: 'lead_source', value: leadData.leadSource || 'Website' },
+            { name: 'address', value: leadData.address || '' },
+            { name: 'preferred_date', value: leadData.date || '' },
+            { name: 'time_window', value: leadData.time || '' },
+            { name: 'project_notes', value: leadData.notes || '' },
         ];
 
         const payload = {
             submittedAt: Date.now(),
             fields,
             context: {
-                pageUri: leadData.pageUri || 'https://thephoenixroof.com/form-submission',
+                pageUri: leadData.pageUri || leadData.referer || 'https://roofbyphoenix.com/form-submission',
                 pageName: leadData.pageName || 'Website Interaction',
                 ipAddress: leadData.ipAddress, // CRITICAL: Helps prevent spam flagging
                 hutk: leadData.hutk // Optional cookie for session merging
@@ -340,9 +344,11 @@ app.post('/api/signups', async (req, res) => {
 app.post('/api/quotes-sync', async (req, res) => {
     try {
         const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+        const referer = req.headers['referer'];
         const success = await syncToHubSpot({
             ...req.body,
             ipAddress,
+            referer,
             pageName: req.body.pageName || 'Quote'
         });
         res.json({ success });
