@@ -3,7 +3,7 @@ import { CheckCircle, Loader2, Video, MapPin, Calendar, Clock, User, Phone, Mail
 import { useAuth } from '../contexts/AuthContext';
 
 // REPLACE THIS with your actual Google Calendar Appointment Schedule URL
-const GOOGLE_CALENDAR_BOOKING_URL = 'https://calendar.google.com/calendar/u/0/appointments/schedules/PASTE_YOUR_LINK_HERE';
+const GOOGLE_CALENDAR_BOOKING_URL = 'https://calendar.app.google/AUJDFzkqMMp8NQKa7';
 
 interface SchedulerProps {
   initialNotes?: string;

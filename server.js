@@ -298,7 +298,7 @@ app.post('/api/signups', async (req, res) => {
     const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
     try {
-        console.log(`[Persistence] Logging signup for: ${email}`);
+        console.log(`[Persistence] Logging signup for: ${email} | Source: ${leadSource || 'Website'}`);
 
         // 1. Internal DB Sync
         const dbPromise = pool.query(`
@@ -345,13 +345,46 @@ app.post('/api/quotes-sync', async (req, res) => {
     try {
         const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
         const referer = req.headers['referer'];
-        const success = await syncToHubSpot({
+        const { firstName, lastName, email, phone, address, date, time, notes, leadSource } = req.body;
+
+        // 1. Database Persistence for Scheduler
+        let dbPromise = Promise.resolve();
+        if (req.body.pageName === 'Scheduler') {
+            console.log(`[Persistence] Logging scheduler lead for: ${email} | Type: ${req.body.meetingType || 'In-person'} | Interaction: ${date} @ ${time}`);
+            dbPromise = pool.query(`
+                INSERT INTO signups (first_name, last_name, email, phone, address, preferred_date, time_window, project_notes, lead_source)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                ON CONFLICT (email) DO UPDATE 
+                SET first_name = EXCLUDED.first_name,
+                    last_name = EXCLUDED.last_name,
+                    phone = EXCLUDED.phone,
+                    address = EXCLUDED.address,
+                    preferred_date = EXCLUDED.preferred_date,
+                    time_window = EXCLUDED.time_window,
+                    project_notes = EXCLUDED.project_notes,
+                    lead_source = EXCLUDED.lead_source;
+            `, [firstName, lastName, email, phone, address, date, time, notes, leadSource || 'Website Scheduler']);
+        }
+
+        // 2. HubSpot CRM Sync
+        const hubspotPromise = syncToHubSpot({
             ...req.body,
             ipAddress,
             referer,
             pageName: req.body.pageName || 'Quote'
         });
-        res.json({ success });
+
+        const [dbRes, hubspotOk] = await Promise.allSettled([dbPromise, hubspotPromise]);
+
+        if (req.body.pageName === 'Scheduler') {
+            console.log(`[Scheduler Sync] DB Persistence: ${dbRes.status === 'fulfilled' ? 'OK' : 'FAILED (' + dbRes.reason.message + ')'}`);
+        }
+        console.log(`[Scheduler Sync] HubSpot CRM: ${hubspotOk.status === 'fulfilled' && hubspotOk.value ? 'OK' : 'FAILED'}`);
+
+        res.json({
+            success: (hubspotOk.status === 'fulfilled' && hubspotOk.value === true),
+            dbPersisted: dbRes.status === 'fulfilled'
+        });
     } catch (err) {
         console.error("Quotes Sync Error:", err);
         res.status(500).json({ error: "Failed to sync quote" });
