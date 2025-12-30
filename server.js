@@ -59,12 +59,14 @@ const syncToHubSpot = async (leadData) => {
             { name: 'lastname', value: leadData.lastName || '' },
             { name: 'mobilephone', value: leadData.phone || '' },
             { name: 'zip', value: leadData.zip || '' },
-            { name: 'privacy_consent', value: leadData.privacyConsent ? 'true' : 'false' },
             { name: 'lead_source', value: leadData.leadSource || 'Website' },
             { name: 'address', value: leadData.address || '' },
             { name: 'preferred_date', value: leadData.date || '' },
             { name: 'time_window', value: leadData.time || '' },
             { name: 'project_notes', value: leadData.notes || '' },
+            { name: 'utm_source', value: leadData.utmSource || '' },
+            { name: 'utm_medium', value: leadData.utmMedium || '' },
+            { name: 'utm_campaign', value: leadData.utmCampaign || '' },
         ];
 
         const payload = {
@@ -294,8 +296,12 @@ app.post('/api/quotes', async (req, res) => {
 
 // User Signups API
 app.post('/api/signups', async (req, res) => {
-    const { firstName, lastName, email, phone, zip, privacyConsent, leadSource, pageUri } = req.body;
+    const { firstName, lastName, email, phone, zip, privacyConsent, leadSource, pageUri, utmSource, utmMedium, utmCampaign } = req.body;
     const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+
+    if (!phone) {
+        return res.status(400).json({ error: "Phone number is required" });
+    }
 
     try {
         console.log(`[Persistence] Logging signup for: ${email} | Source: ${leadSource || 'Website'}`);
@@ -318,7 +324,10 @@ app.post('/api/signups', async (req, res) => {
             firstName, lastName, email, phone, zip, privacyConsent, leadSource,
             ipAddress,
             pageUri,
-            pageName: 'Signup'
+            pageName: 'Signup',
+            utmSource,
+            utmMedium,
+            utmCampaign
         });
 
         const [dbRes, hubspotOk] = await Promise.allSettled([dbPromise, hubspotPromise]);
@@ -340,12 +349,17 @@ app.post('/api/signups', async (req, res) => {
     }
 });
 
-// HubSpot Bridge for Instant Quotes
+// HubSpot Bridge for Scheduler & Insurance Analysis
+// TODO: Re-verify Instant Quote integration when contact capture is implemented
 app.post('/api/quotes-sync', async (req, res) => {
     try {
         const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
         const referer = req.headers['referer'];
-        const { firstName, lastName, email, phone, address, date, time, notes, leadSource } = req.body;
+        const { firstName, lastName, email, phone, address, date, time, notes, leadSource, utmSource, utmMedium, utmCampaign } = req.body;
+
+        if (!phone) {
+            return res.status(400).json({ error: "Phone number is required" });
+        }
 
         // 1. Database Persistence for Scheduler
         let dbPromise = Promise.resolve();

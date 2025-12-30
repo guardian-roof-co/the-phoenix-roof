@@ -9,15 +9,15 @@ interface RoofingServicesProps {
 const SERVICES = [
   {
     id: 'insurance',
-    title: 'Insurance Claim Experts',
-    subtitle: 'Zero Out-of-Pocket Restoration',
-    description: 'Ada, Cascade, & GR storm recovery. We deal with the insurance company so you don\'t have to. Most homeowners only pay their deductible for a brand new roof.',
+    title: 'Insurance-Guided Storm Restoration',
+    subtitle: 'Serving Ada, Cascade, & Greater Grand Rapids.',
+    description: 'We help homeowners navigate the insurance claim process for storm damage repairs. Insurance coverage is determined by your carrier, and homeowners are responsible for their deductible as required by law.',
     icon: CloudLightning,
     features: [
-      'Digital Storm Damage Report',
-      'Xactimate Professional Pricing',
-      'Direct Adjuster Coordination',
-      'MI Building Code Specialist'
+      'Digital Storm Damage Documentation',
+      'Xactimate Industry-Standard Estimates',
+      'Adjuster Coordination Support',
+      'Michigan Building Code Expertise'
     ],
     cta: 'Check Storm History',
     color: 'border-fire-500 bg-fire-50/30'
@@ -147,8 +147,8 @@ export const RoofingServices: React.FC<RoofingServicesProps> = ({ onSchedule, on
                   else onSchedule();
                 }}
                 className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 ${service.id === 'insurance' ? 'bg-fire-600 hover:bg-fire-700 text-white shadow-fire-200' :
-                    service.id === 'retail' ? 'bg-phoenix-600 hover:bg-phoenix-700 text-white shadow-phoenix-200' :
-                      'bg-slate-900 hover:bg-slate-800 text-white'
+                  service.id === 'retail' ? 'bg-phoenix-600 hover:bg-phoenix-700 text-white shadow-phoenix-200' :
+                    'bg-slate-900 hover:bg-slate-800 text-white'
                   }`}
               >
                 {service.cta} <ArrowRight className="w-4 h-4" />

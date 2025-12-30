@@ -50,8 +50,16 @@ export const InsuranceAnalyzer: React.FC<InsuranceAnalyzerProps> = ({ onSchedule
   };
 
   const handleAnalyze = async () => {
-    if (!preview || !file || !userEmail) {
+    setErrorMsg(null);
+    if (!preview || !file || !userEmail || !userPhone) {
       if (!userEmail) setErrorMsg("Email is required for analysis results.");
+      if (!userPhone) setErrorMsg("Phone number is required for follow-up.");
+      return;
+    }
+
+    const cleanPhone = userPhone.replace(/\D/g, '');
+    if (cleanPhone.length !== 10) {
+      setErrorMsg("Please enter a valid 10-digit US phone number.");
       return;
     }
 
@@ -62,6 +70,9 @@ export const InsuranceAnalyzer: React.FC<InsuranceAnalyzerProps> = ({ onSchedule
       if (parts.length === 2) return parts.pop()?.split(';').shift();
     };
     const hutk = getCookie('hubspotutk');
+    const utmSource = sessionStorage.getItem('utm_source');
+    const utmMedium = sessionStorage.getItem('utm_medium');
+    const utmCampaign = sessionStorage.getItem('utm_campaign');
 
     setStatus(AnalysisStatus.ANALYZING);
     try {
@@ -86,7 +97,10 @@ export const InsuranceAnalyzer: React.FC<InsuranceAnalyzerProps> = ({ onSchedule
             leadSource: 'AI Insurance Analyzer',
             pageUri: window.location.href,
             pageName: 'Insurance Analysis',
-            hutk
+            hutk,
+            utmSource,
+            utmMedium,
+            utmCampaign
           })
         });
       } catch (e) {

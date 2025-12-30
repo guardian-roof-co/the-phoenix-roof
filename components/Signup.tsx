@@ -59,6 +59,9 @@ export const Signup: React.FC = () => {
             if (parts.length === 2) return parts.pop()?.split(';').shift();
         };
         const hutk = getCookie('hubspotutk');
+        const utmSource = sessionStorage.getItem('utm_source');
+        const utmMedium = sessionStorage.getItem('utm_medium');
+        const utmCampaign = sessionStorage.getItem('utm_campaign');
 
         if (!validate()) {
             return;
@@ -81,7 +84,10 @@ export const Signup: React.FC = () => {
                     privacyConsent,
                     leadSource: 'Website Signup Page',
                     pageUri: window.location.href,
-                    hutk
+                    hutk,
+                    utmSource,
+                    utmMedium,
+                    utmCampaign
                 })
             });
 

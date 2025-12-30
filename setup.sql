@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS signups (
     first_name VARCHAR(100),
     last_name VARCHAR(100),
     email VARCHAR(255),
-    phone VARCHAR(50),
+    phone VARCHAR(50) NOT NULL,
     zip_code VARCHAR(10),
     address TEXT,
     preferred_date VARCHAR(50),

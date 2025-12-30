@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { CheckCircle, Loader2, Video, MapPin, Calendar, Clock, User, Phone, Mail, ExternalLink, ShieldCheck } from 'lucide-react';
+import { CheckCircle, Loader2, Video, MapPin, Calendar, Clock, User, Phone, Mail, ExternalLink, ShieldCheck, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 // REPLACE THIS with your actual Google Calendar Appointment Schedule URL
@@ -43,8 +43,38 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
     }
   }, []);
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!firstName.trim()) newErrors.firstName = 'First name is required';
+    if (!lastName.trim()) newErrors.lastName = 'Last name is required';
+    if (!email.trim()) {
+      newErrors.email = 'Email address is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    if (!phone.trim()) {
+      newErrors.phone = 'Phone number is required';
+    } else {
+      const cleanPhone = phone.replace(/\D/g, '');
+      if (cleanPhone.length !== 10) {
+        newErrors.phone = 'Please enter a valid 10-digit US phone number';
+      }
+    }
+
+    if (!address.trim()) newErrors.address = 'Property address is required';
+    if (meetingType === 'in-person' && !date) newErrors.date = 'Preferred date is required';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
     setIsSubmitting(true);
 
     // Helper to get HubSpot tracking cookie
@@ -54,6 +84,9 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
       if (parts.length === 2) return parts.pop()?.split(';').shift();
     };
     const hutk = getCookie('hubspotutk');
+    const utmSource = sessionStorage.getItem('utm_source');
+    const utmMedium = sessionStorage.getItem('utm_medium');
+    const utmCampaign = sessionStorage.getItem('utm_campaign');
 
     const fullNotes = meetingType === 'virtual'
       ? `VIRTUAL BOOKING REQUESTED - REDIRECTED TO GOOGLE CALENDAR.\n\nNotes: ${notes}`
@@ -76,7 +109,10 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
           leadSource: `Website Scheduler (${meetingType})`,
           pageUri: window.location.href,
           pageName: 'Scheduler',
-          hutk
+          hutk,
+          utmSource,
+          utmMedium,
+          utmCampaign
         })
       });
     } catch (e) {
@@ -173,15 +209,33 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
             <div className="space-y-2">
               <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">First Name</label>
               <div className="relative">
-                <User className="absolute left-5 top-5 w-5 h-5 text-slate-300" />
-                <input required type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-phoenix-50 outline-none font-bold placeholder-slate-400" placeholder="First Name" />
+                <User className={`absolute left-5 top-5 w-5 h-5 ${errors.firstName ? 'text-red-400' : 'text-slate-300'}`} />
+                <input required type="text" value={firstName} onChange={(e) => {
+                  setFirstName(e.target.value);
+                  if (errors.firstName) setErrors(prev => { const n = { ...prev }; delete n.firstName; return n; });
+                }} className={`w-full pl-14 pr-6 py-5 bg-slate-50 border ${errors.firstName ? 'border-red-300 ring-4 ring-red-50' : 'border-slate-200 focus:ring-4 focus:ring-phoenix-50'} rounded-2xl outline-none font-bold placeholder-slate-400 Transition-all`} placeholder="First Name" />
+                {errors.firstName && (
+                  <div className="flex items-center gap-1.5 mt-2 ml-4 text-red-500 text-[10px] font-bold uppercase tracking-wider animate-fade-in">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.firstName}
+                  </div>
+                )}
               </div>
             </div>
             <div className="space-y-2">
               <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Last Name</label>
               <div className="relative">
-                <User className="absolute left-5 top-5 w-5 h-5 text-slate-300" />
-                <input required type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-phoenix-50 outline-none font-bold placeholder-slate-400" placeholder="Last Name" />
+                <User className={`absolute left-5 top-5 w-5 h-5 ${errors.lastName ? 'text-red-400' : 'text-slate-300'}`} />
+                <input required type="text" value={lastName} onChange={(e) => {
+                  setLastName(e.target.value);
+                  if (errors.lastName) setErrors(prev => { const n = { ...prev }; delete n.lastName; return n; });
+                }} className={`w-full pl-14 pr-6 py-5 bg-slate-50 border ${errors.lastName ? 'border-red-300 ring-4 ring-red-50' : 'border-slate-200 focus:ring-4 focus:ring-phoenix-50'} rounded-2xl outline-none font-bold placeholder-slate-400 Translation-all`} placeholder="Last Name" />
+                {errors.lastName && (
+                  <div className="flex items-center gap-1.5 mt-2 ml-4 text-red-500 text-[10px] font-bold uppercase tracking-wider animate-fade-in">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.lastName}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -190,16 +244,34 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
             <div className="space-y-2">
               <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Phone Number</label>
               <div className="relative">
-                <Phone className="absolute left-5 top-5 w-5 h-5 text-slate-300" />
-                <input required type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-phoenix-50 outline-none font-bold placeholder-slate-400" placeholder="(616) 555-0123" />
+                <Phone className={`absolute left-5 top-5 w-5 h-5 ${errors.phone ? 'text-red-400' : 'text-slate-300'}`} />
+                <input required type="tel" value={phone} onChange={(e) => {
+                  setPhone(e.target.value);
+                  if (errors.phone) setErrors(prev => { const n = { ...prev }; delete n.phone; return n; });
+                }} className={`w-full pl-14 pr-6 py-5 bg-slate-50 border ${errors.phone ? 'border-red-300 ring-4 ring-red-50' : 'border-slate-200 focus:ring-4 focus:ring-phoenix-50'} rounded-2xl outline-none font-bold placeholder-slate-400 transition-all`} placeholder="(616) 555-0123" />
+                {errors.phone && (
+                  <div className="flex items-center gap-1.5 mt-2 ml-4 text-red-500 text-[10px] font-bold uppercase tracking-wider animate-fade-in">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.phone}
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="space-y-2">
               <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Email Address</label>
               <div className="relative">
-                <Mail className="absolute left-5 top-5 w-5 h-5 text-slate-300" />
-                <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-phoenix-50 outline-none font-bold placeholder-slate-400" placeholder="you@example.com" />
+                <Mail className={`absolute left-5 top-5 w-5 h-5 ${errors.email ? 'text-red-400' : 'text-slate-300'}`} />
+                <input required type="email" value={email} onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (errors.email) setErrors(prev => { const n = { ...prev }; delete n.email; return n; });
+                }} className={`w-full pl-14 pr-6 py-5 bg-slate-50 border ${errors.email ? 'border-red-300 ring-4 ring-red-50' : 'border-slate-200 focus:ring-4 focus:ring-phoenix-50'} rounded-2xl outline-none font-bold placeholder-slate-400 transition-all`} placeholder="you@example.com" />
+                {errors.email && (
+                  <div className="flex items-center gap-1.5 mt-2 ml-4 text-red-500 text-[10px] font-bold uppercase tracking-wider animate-fade-in">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.email}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -207,16 +279,25 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
           <div className="space-y-2">
             <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Property Address</label>
             <div className="relative">
-              <MapPin className="absolute left-5 top-5 w-5 h-5 text-slate-300" />
+              <MapPin className={`absolute left-5 top-5 w-5 h-5 ${errors.address ? 'text-red-400' : 'text-slate-300'}`} />
               <input
                 ref={addressRef}
                 required
                 type="text"
                 value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="w-full pl-14 pr-6 py-5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-phoenix-50 outline-none font-bold placeholder-slate-400"
+                onChange={(e) => {
+                  setAddress(e.target.value);
+                  if (errors.address) setErrors(prev => { const n = { ...prev }; delete n.address; return n; });
+                }}
+                className={`w-full pl-14 pr-6 py-5 bg-slate-50 border ${errors.address ? 'border-red-300 ring-4 ring-red-50' : 'border-slate-200 focus:ring-4 focus:ring-phoenix-50'} rounded-2xl outline-none font-bold placeholder-slate-400 transition-all`}
                 placeholder="Grand Rapids Address..."
               />
+              {errors.address && (
+                <div className="flex items-center gap-1.5 mt-2 ml-4 text-red-500 text-[10px] font-bold uppercase tracking-wider animate-fade-in">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.address}
+                </div>
+              )}
             </div>
           </div>
 
@@ -225,8 +306,17 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
               <div className="space-y-2">
                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Preferred Date</label>
                 <div className="relative">
-                  <Calendar className="absolute left-5 top-5 w-5 h-5 text-slate-300 pointer-events-none" />
-                  <input required type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-phoenix-50 outline-none font-bold" />
+                  <Calendar className={`absolute left-5 top-5 w-5 h-5 ${errors.date ? 'text-red-400' : 'text-slate-300'} pointer-events-none`} />
+                  <input required type="date" value={date} onChange={(e) => {
+                    setDate(e.target.value);
+                    if (errors.date) setErrors(prev => { const n = { ...prev }; delete n.date; return n; });
+                  }} className={`w-full pl-14 pr-6 py-5 bg-slate-50 border ${errors.date ? 'border-red-300 ring-4 ring-red-50' : 'border-slate-200 focus:ring-4 focus:ring-phoenix-50'} rounded-2xl outline-none font-bold transition-all`} />
+                  {errors.date && (
+                    <div className="flex items-center gap-1.5 mt-2 ml-4 text-red-500 text-[10px] font-bold uppercase tracking-wider animate-fade-in">
+                      <AlertCircle className="w-3 h-3" />
+                      {errors.date}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="space-y-2">

@@ -112,6 +112,9 @@ export const QuoteFlow: React.FC<QuoteFlowProps> = ({ initialLocation, onSchedul
             if (parts.length === 2) return parts.pop()?.split(';').shift();
         };
         const hutk = getCookie('hubspotutk');
+        const utmSource = sessionStorage.getItem('utm_source');
+        const utmMedium = sessionStorage.getItem('utm_medium');
+        const utmCampaign = sessionStorage.getItem('utm_campaign');
 
         const summary = `
 Instant Quote Detail:
@@ -123,7 +126,10 @@ Instant Quote Detail:
 - Total Estimate: $${total.toLocaleString()}
     `;
 
-        // Sync to HubSpot for Operations Team (via Backend)
+        /* 
+        TODO: Re-enable HubSpot sync for Instant Quotes once contact capture is added.
+        Currently disabled to prevent errors due to missing phone numbers.
+        
         try {
             await fetch('/api/quotes-sync', {
                 method: 'POST',
@@ -133,12 +139,16 @@ Instant Quote Detail:
                     leadSource: 'Instant Quote Engine',
                     pageUri: window.location.href,
                     pageName: 'Instant Quote',
-                    hutk
+                    hutk,
+                    utmSource,
+                    utmMedium,
+                    utmCampaign
                 })
             });
         } catch (e) {
             console.warn('[HubSpot Bridge Failure]', e);
         }
+        */
 
         saveQuote({
             id: crypto.randomUUID(),
@@ -173,9 +183,18 @@ Instant Quote Detail:
                                 placeholder="Enter property address..."
                                 value={inputValue}
                                 onChange={(e) => setInputValue(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && setStep(2)}
                                 className="w-full pl-14 pr-6 py-6 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:ring-4 focus:ring-phoenix-100 focus:border-phoenix-500 outline-none font-black text-lg text-slate-900 transition-all"
                             />
                         </div>
+
+                        <button
+                            onClick={() => setStep(2)}
+                            className="w-full mt-6 bg-slate-900 hover:bg-black text-white font-black py-4 rounded-2xl text-xs uppercase tracking-[0.2em] shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center gap-2 group"
+                        >
+                            Next Step <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        </button>
+
                         <div className="mt-8 flex items-center justify-center gap-6 text-slate-400 font-black text-[10px] uppercase tracking-widest">
                             <div className="flex items-center gap-1.5"><ShieldCheck className="w-4 h-4" /> 616 Native</div>
                             <div className="flex items-center gap-1.5"><Hammer className="w-4 h-4" /> Owens Corning</div>
@@ -264,27 +283,49 @@ Instant Quote Detail:
 
                             {/* Material Selection */}
                             <div className="bg-white p-10 rounded-[3.5rem] shadow-xl border border-slate-100">
-                                <h3 className="text-2xl font-black text-slate-900 mb-8 italic uppercase flex items-center gap-3">
-                                    <Hammer className="w-6 h-6 text-slate-400" />
-                                    Material Grade
-                                </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="flex items-center gap-4 mb-10">
+                                    <div className="p-3 bg-slate-50 rounded-2xl">
+                                        <Hammer className="w-8 h-8 text-slate-900" />
+                                    </div>
+                                    <h3 className="text-4xl font-black text-slate-900 italic uppercase tracking-tighter">
+                                        Material Grade
+                                    </h3>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                     {MATERIALS.map((mat) => (
                                         <div
                                             key={mat.id}
                                             onClick={() => setSelectedMaterial(mat)}
-                                            className={`relative cursor-pointer rounded-3xl border-2 overflow-hidden transition-all duration-300 group ${selectedMaterial.id === mat.id ? 'border-phoenix-500 ring-4 ring-phoenix-50' : 'border-slate-100 hover:border-slate-300'}`}
+                                            className={`relative cursor-pointer rounded-[2.5rem] border-2 overflow-hidden transition-all duration-500 group flex flex-col ${selectedMaterial.id === mat.id
+                                                ? 'border-blue-500 ring-[6px] ring-blue-50 shadow-2xl scale-[1.02]'
+                                                : 'border-slate-100 hover:border-slate-200 shadow-sm'
+                                                }`}
                                         >
-                                            <div className="h-28 overflow-hidden relative">
-                                                <img src={mat.image} alt={mat.name} className="w-full h-full object-cover" />
-                                                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-all"></div>
+                                            {/* Image placeholder to match the layout in the image */}
+                                            <div className="h-44 bg-slate-200 relative overflow-hidden shrink-0">
+                                                <img
+                                                    src={mat.image}
+                                                    alt={mat.name}
+                                                    className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110"
+                                                />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent"></div>
+                                                <div className="absolute top-4 left-4 bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20">
+                                                    <p className="text-[9px] font-black text-white uppercase tracking-widest">{mat.name}</p>
+                                                </div>
                                             </div>
-                                            <div className="p-6">
-                                                <h4 className="font-black text-xs uppercase italic text-slate-900 mb-2">{mat.name}</h4>
-                                                <p className="text-[10px] font-bold text-slate-500 leading-relaxed mb-4">{mat.description}</p>
-                                                <div className="flex justify-between items-center text-[9px] font-black uppercase text-slate-400 tracking-widest border-t border-slate-50 pt-4">
+
+                                            <div className="p-8 flex flex-col flex-1">
+                                                <h4 className="font-black text-lg uppercase italic text-slate-900 mb-3 leading-tight tracking-tighter">
+                                                    {mat.name}
+                                                </h4>
+                                                <p className="text-[12px] font-bold text-slate-500 leading-relaxed mb-auto pb-8 min-h-[60px]">
+                                                    {mat.description}
+                                                </p>
+
+                                                <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-400 tracking-widest border-t border-slate-50 pt-6">
                                                     <span>Rating</span>
-                                                    <span className="text-slate-900">{mat.lifespan}</span>
+                                                    <span className="text-slate-900 text-sm tracking-tighter">{mat.lifespan}</span>
                                                 </div>
                                             </div>
                                         </div>

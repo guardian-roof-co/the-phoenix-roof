@@ -13,6 +13,8 @@ import { About } from './components/About';
 import { ViewState } from './types';
 import { AuthProvider } from './contexts/AuthContext';
 import { Signup } from './components/Signup';
+import { Certifications } from './components/Certifications';
+import { Testimonials } from './components/Testimonials';
 import { MapPin, Shield, Star, ThumbsUp, Hammer, Wrench, ShieldAlert, CheckCircle2, Bot, ArrowRight, ShieldCheck, FileSearch } from 'lucide-react';
 
 export default function App() {
@@ -27,6 +29,19 @@ function AppContent() {
   const [currentView, setCurrentView] = useState<ViewState>('home');
   const [quoteLocation, setQuoteLocation] = useState<{ address: string, coords?: { lat: number, lng: number } } | null>(null);
   const [schedulerPrefill, setSchedulerPrefill] = useState<string>('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const utms = {
+      utmSource: params.get('utm_source'),
+      utmMedium: params.get('utm_medium'),
+      utmCampaign: params.get('utm_campaign')
+    };
+
+    if (utms.utmSource) sessionStorage.setItem('utm_source', utms.utmSource);
+    if (utms.utmMedium) sessionStorage.setItem('utm_medium', utms.utmMedium);
+    if (utms.utmCampaign) sessionStorage.setItem('utm_campaign', utms.utmCampaign);
+  }, []);
 
   const handleNavigate = (view: ViewState) => {
     setCurrentView(view);
@@ -59,6 +74,8 @@ function AppContent() {
                 <div className="flex items-center gap-2"><ThumbsUp className="w-4 h-4 text-fire-500" /> Trusted West MI Choice</div>
               </div>
             </div>
+
+            <Certifications />
 
             {/* AI Policy Review Section - NEW */}
             <div className="bg-white py-24 relative overflow-hidden">
@@ -195,6 +212,8 @@ function AppContent() {
               </div>
             </div>
 
+            <Testimonials />
+
             <div className="bg-white py-24 relative">
               <div className="max-w-7xl mx-auto px-4">
                 <div className="text-center mb-16">
@@ -266,7 +285,7 @@ function AppContent() {
             <div className="flex flex-col md:items-end gap-4">
               <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800">
                 <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1">616 Support Line</p>
-                <p className="text-white font-black text-xl tracking-tighter italic">616-319-HAIL</p>
+                <a href="tel:6163194245" className="text-white font-black text-xl tracking-tighter italic hover:text-phoenix-500 transition-colors">616-319-HAIL</a>
               </div>
             </div>
           </div>

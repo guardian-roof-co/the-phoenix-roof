@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Flame, Menu, X, CloudLightning, Ruler, Home, ShieldCheck, Bot, User } from 'lucide-react';
+import { Flame, Menu, X, CloudLightning, Ruler, Home, ShieldCheck, Bot, User, Heart } from 'lucide-react';
 import { ViewState } from '../types';
 
 interface HeaderProps {
@@ -40,6 +40,9 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentView }) => {
               <button onClick={() => handleNav('storm')} className={`px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-widest transition-all hover:bg-slate-800 ${currentView === 'storm' ? 'text-fire-400 bg-slate-800/50' : 'text-slate-300'}`}>
                 Storm Tracker
               </button>
+              <button onClick={() => handleNav('about')} className={`px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-widest transition-all hover:bg-slate-800 ${currentView === 'about' ? 'text-white bg-phoenix-600' : 'text-slate-300'}`}>
+                About Us
+              </button>
               <button onClick={() => handleNav('signup')} className={`px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-widest transition-all hover:bg-slate-800 ${currentView === 'signup' ? 'text-white bg-phoenix-600' : 'text-slate-300'}`}>
                 Signup
               </button>
@@ -64,6 +67,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentView }) => {
                 <button onClick={() => handleNav('storm')} className="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800 transition-colors flex items-center gap-3 text-sm font-bold text-slate-300"><CloudLightning className="w-4 h-4 text-fire-500" /> Storm Tracker</button>
                 <button onClick={() => handleNav('education')} className="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800 transition-colors flex items-center gap-3 text-sm font-bold text-slate-300"><ShieldCheck className="w-4 h-4 text-green-500" /> Education</button>
                 <button onClick={() => handleNav('signup')} className="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800 transition-colors flex items-center gap-3 text-sm font-bold text-slate-300"><User className="w-4 h-4 text-phoenix-500" /> Signup</button>
+                <button onClick={() => handleNav('about')} className="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800 transition-colors flex items-center gap-3 text-sm font-bold text-slate-300"><Heart className="w-4 h-4 text-phoenix-600" /> About Us</button>
               </div>
 
               <div className="pt-6 border-t border-slate-800">
