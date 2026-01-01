@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CheckCircle, Loader2, User, Phone, Mail, ShieldCheck, MapPin, AlertCircle } from 'lucide-react';
+import { apiClient } from '../services/apiClient';
 
 export const Signup: React.FC = () => {
     const [submitted, setSubmitted] = useState(false);
@@ -10,7 +11,6 @@ export const Signup: React.FC = () => {
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [zip, setZip] = useState('');
-    const [privacyConsent, setPrivacyConsent] = useState(false);
 
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -41,9 +41,6 @@ export const Signup: React.FC = () => {
             newErrors.zip = 'Please enter a valid 5-digit US ZIP code';
         }
 
-        if (!privacyConsent) {
-            newErrors.privacy = 'You must agree to the privacy policy';
-        }
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -52,17 +49,6 @@ export const Signup: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Helper to get HubSpot tracking cookie
-        const getCookie = (name: string) => {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop()?.split(';').shift();
-        };
-        const hutk = getCookie('hubspotutk');
-        const utmSource = sessionStorage.getItem('utm_source');
-        const utmMedium = sessionStorage.getItem('utm_medium');
-        const utmCampaign = sessionStorage.getItem('utm_campaign');
-
         if (!validate()) {
             return;
         }
@@ -70,35 +56,21 @@ export const Signup: React.FC = () => {
         setIsSubmitting(true);
 
         try {
-            // Log to Backend (handles both Database and HubSpot sync)
-            console.log('[Signup] Submitting to backend...');
-            const response = await fetch('/api/signups', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    firstName,
-                    lastName,
-                    email,
-                    phone,
-                    zip,
-                    privacyConsent,
-                    leadSource: 'Website Signup Page',
-                    pageUri: window.location.href,
-                    hutk,
-                    utmSource,
-                    utmMedium,
-                    utmCampaign
-                })
+            // Use unified API client (handles tracking automatically)
+            console.log('[Signup] Submitting via API Client...');
+            await apiClient.post('/api/signups', {
+                firstName,
+                lastName,
+                email,
+                phone,
+                zip,
+                leadSource: 'Website Signup Page'
             });
 
-            if (response.ok) {
-                setSubmitted(true);
-            } else {
-                throw new Error("Backend response not OK");
-            }
-        } catch (err) {
+            setSubmitted(true);
+        } catch (err: any) {
             console.error("Signup Error:", err);
-            alert("There was an issue creating your account. Please try again or call 616-319-HAIL.");
+            alert(err.message || "There was an issue creating your account. Please try again or call 616-319-HAIL.");
         } finally {
             setIsSubmitting(false);
         }
@@ -124,7 +96,6 @@ export const Signup: React.FC = () => {
                         setEmail('');
                         setPhone('');
                         setZip('');
-                        setPrivacyConsent(false);
                         setErrors({});
                     }}
                     className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-black transition shadow-xl"
@@ -271,36 +242,7 @@ export const Signup: React.FC = () => {
                                 )}
                             </div>
                         </div>
-
-                        <div className="pt-4">
-                            <label className={`flex items-start gap-4 cursor-pointer group p-4 rounded-3xl transition-all ${errors.privacy ? 'bg-red-50 border border-red-100' : 'hover:bg-slate-50'}`}>
-                                <div className="relative flex items-center mt-1">
-                                    <input
-                                        type="checkbox"
-                                        required
-                                        checked={privacyConsent}
-                                        onChange={(e) => {
-                                            setPrivacyConsent(e.target.checked);
-                                            if (errors.privacy) setErrors(prev => { const n = { ...prev }; delete n.privacy; return n; });
-                                        }}
-                                        className={`peer h-6 w-6 cursor-pointer appearance-none rounded-lg border-2 transition-all ${errors.privacy ? 'border-red-300 bg-white' : 'border-slate-200 bg-slate-50 checked:bg-phoenix-600 checked:border-phoenix-600'} focus:outline-none`}
-                                    />
-                                    <CheckCircle className="absolute left-1 top-1 h-4 w-4 text-white opacity-0 transition-opacity peer-checked:opacity-100" />
-                                </div>
-                                <div className="space-y-1">
-                                    <span className={`text-xs font-medium leading-relaxed transition-colors ${errors.privacy ? 'text-red-600' : 'text-slate-500 group-hover:text-slate-700'}`}>
-                                        Phoenix Roof & Exteriors needs the contact information you provide to us to contact you about our products and services. You may unsubscribe from these communications at any time. For information on how to unsubscribe, as well as our privacy practices and commitment to protecting your privacy, please review our Privacy Policy.
-                                    </span>
-                                    {errors.privacy && (
-                                        <div className="flex items-center gap-1.5 mt-1 text-red-500 text-[10px] font-black uppercase tracking-wider italic">
-                                            Required: Please agree to continue
-                                        </div>
-                                    )}
-                                </div>
-                            </label>
-                        </div>
                     </div>
-
                     <button
                         type="submit"
                         disabled={isSubmitting}

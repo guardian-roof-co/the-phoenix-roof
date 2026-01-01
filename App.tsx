@@ -32,15 +32,24 @@ function AppContent() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const utms = {
-      utmSource: params.get('utm_source'),
-      utmMedium: params.get('utm_medium'),
-      utmCampaign: params.get('utm_campaign')
-    };
+    const source = params.get('utm_source');
+    const medium = params.get('utm_medium');
+    const campaign = params.get('utm_campaign');
+    const term = params.get('utm_term');
+    const content = params.get('utm_content');
 
-    if (utms.utmSource) sessionStorage.setItem('utm_source', utms.utmSource);
-    if (utms.utmMedium) sessionStorage.setItem('utm_medium', utms.utmMedium);
-    if (utms.utmCampaign) sessionStorage.setItem('utm_campaign', utms.utmCampaign);
+    if (source) sessionStorage.setItem('utm_source', source);
+    if (medium) sessionStorage.setItem('utm_medium', medium);
+    if (campaign) sessionStorage.setItem('utm_campaign', campaign);
+    if (term) sessionStorage.setItem('utm_term', term);
+    if (content) sessionStorage.setItem('utm_content', content);
+
+    // Default values for testing/direct access
+    if (!sessionStorage.getItem('utm_source')) sessionStorage.setItem('utm_source', 'direct');
+    if (!sessionStorage.getItem('utm_medium')) sessionStorage.setItem('utm_medium', 'organic');
+    if (!sessionStorage.getItem('utm_campaign')) sessionStorage.setItem('utm_campaign', 'none');
+    if (!sessionStorage.getItem('utm_term')) sessionStorage.setItem('utm_term', '');
+    if (!sessionStorage.getItem('utm_content')) sessionStorage.setItem('utm_content', '');
   }, []);
 
   const handleNavigate = (view: ViewState) => {

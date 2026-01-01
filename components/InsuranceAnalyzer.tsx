@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, Check, AlertTriangle, X, Shield, Bot, FileType, Mail, User, Phone, Loader2 } from 'lucide-react';
+import { Upload, FileText, Check, AlertTriangle, X, Shield, Bot, FileType, Mail, User, Phone, Loader2, ArrowLeft, Download, Zap, Sparkles } from 'lucide-react';
 import { analyzeInsurancePolicy } from '../services/geminiService';
 import { AnalysisStatus } from '../types';
+import { apiClient } from '../services/apiClient';
 
 const MarkdownDisplay = ({ text }: { text: string }) => {
   return (
@@ -63,48 +64,32 @@ export const InsuranceAnalyzer: React.FC<InsuranceAnalyzerProps> = ({ onSchedule
       return;
     }
 
-    // Helper to get HubSpot tracking cookie
-    const getCookie = (name: string) => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop()?.split(';').shift();
-    };
-    const hutk = getCookie('hubspotutk');
-    const utmSource = sessionStorage.getItem('utm_source');
-    const utmMedium = sessionStorage.getItem('utm_medium');
-    const utmCampaign = sessionStorage.getItem('utm_campaign');
-
     setStatus(AnalysisStatus.ANALYZING);
     try {
       const base64Data = preview.split(',')[1];
       let mimeType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
 
+      // 1. AI Analysis via Gemini
       const analysisText = await analyzeInsurancePolicy(base64Data, mimeType);
       setResult(analysisText);
       setStatus(AnalysisStatus.COMPLETE);
 
-      // HubSpot Sync (via Backend Bridge)
+      // 2. HubSpot Sync (via Backend Bridge)
+      setIsSyncing(true);
       try {
         const names = userName.trim().split(' ');
-        await fetch('/api/quotes-sync', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: userEmail,
-            firstName: names[0],
-            lastName: names.slice(1).join(' ') || 'Lead',
-            phone: userPhone,
-            leadSource: 'AI Insurance Analyzer',
-            pageUri: window.location.href,
-            pageName: 'Insurance Analysis',
-            hutk,
-            utmSource,
-            utmMedium,
-            utmCampaign
-          })
+        await apiClient.post('/api/quotes-sync', {
+          email: userEmail,
+          firstName: names[0],
+          lastName: names.slice(1).join(' ') || 'Lead',
+          phone: userPhone,
+          leadSource: 'AI Insurance Analyzer',
+          pageName: 'Insurance Analysis'
         });
       } catch (e) {
         console.warn('[HubSpot Bridge Error]', e);
+      } finally {
+        setIsSyncing(false);
       }
 
     } catch (error) {
