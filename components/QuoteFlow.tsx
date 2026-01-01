@@ -3,6 +3,7 @@ import { MapPin, Loader2, Info, ChevronRight, Settings2, Sliders, ShieldCheck, T
 import { RoofMaterial, StormReport } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { getStormHistory } from '../services/stormService';
+import { apiClient } from '../services/apiClient';
 
 interface QuoteFlowProps {
     initialLocation?: { address: string, coords?: { lat: number, lng: number } } | null;
@@ -82,12 +83,25 @@ export const QuoteFlow: React.FC<QuoteFlowProps> = ({ initialLocation, onSchedul
                 });
             }
 
-            // Simulate/Calculate area (In production we'd use Google Solar API or similar)
-            const timer = setTimeout(() => {
-                setRoofArea(2400); // Standard Grand Rapids residential footprint + 15% waste
-                setIsMeasuring(false);
-            }, 2000);
-            return () => clearTimeout(timer);
+            // Fetch real area from Google Solar API via our backend
+            const fetchRoofData = async () => {
+                try {
+                    const data = await apiClient.get(`/api/roof-measure?lat=${coordinates.lat}&lng=${coordinates.lng}`);
+                    if (data && data.areaSqFt) {
+                        setRoofArea(data.areaSqFt);
+                    } else {
+                        // Fallback to estimate if API fails or building not found
+                        setRoofArea(2400);
+                    }
+                } catch (err) {
+                    console.error('[QuoteFlow] Solar API failed, using fallback', err);
+                    setRoofArea(2400);
+                } finally {
+                    setIsMeasuring(false);
+                }
+            };
+
+            fetchRoofData();
         }
     }, [step, coordinates]);
 
@@ -105,17 +119,6 @@ export const QuoteFlow: React.FC<QuoteFlowProps> = ({ initialLocation, onSchedul
     const handleFinalize = async () => {
         setIsSubmitting(true);
 
-        // Helper to get HubSpot tracking cookie
-        const getCookie = (name: string) => {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop()?.split(';').shift();
-        };
-        const hutk = getCookie('hubspotutk');
-        const utmSource = sessionStorage.getItem('utm_source');
-        const utmMedium = sessionStorage.getItem('utm_medium');
-        const utmCampaign = sessionStorage.getItem('utm_campaign');
-
         const summary = `
 Instant Quote Detail:
 - Address: ${address}
@@ -131,19 +134,10 @@ Instant Quote Detail:
         Currently disabled to prevent errors due to missing phone numbers.
         
         try {
-            await fetch('/api/quotes-sync', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    email: 'pending@user.quote',
-                    leadSource: 'Instant Quote Engine',
-                    pageUri: window.location.href,
-                    pageName: 'Instant Quote',
-                    hutk,
-                    utmSource,
-                    utmMedium,
-                    utmCampaign
-                })
+            await apiClient.post('/api/quotes-sync', {
+                email: 'pending@user.quote',
+                leadSource: 'Instant Quote Engine',
+                pageName: 'Instant Quote'
             });
         } catch (e) {
             console.warn('[HubSpot Bridge Failure]', e);
