@@ -5,7 +5,6 @@ const {
     logCommunication,
     logCall
 } = require('../services/hubspotService');
-const { sendSMS } = require('../services/quoService');
 
 const crypto = require('crypto');
 
@@ -87,16 +86,6 @@ router.post('/quo-webhook', async (req, res) => {
             if (isMissed) {
                 console.log(`[Quo Webhook] Logging MISSED CALL for ${phone}`);
                 await logCall(contactId, `Missed call from Quo. Status: ${dataNode.status || 'Missed'}`, 'No answer');
-
-                // Auto-reply with SMS
-                const ourNumber = dataNode.to;
-                if (ourNumber && phone) {
-                    await sendSMS(
-                        phone,
-                        ourNumber,
-                        "Sorry we missed your call by Phoenix Roof. We will get back to you shortly!"
-                    );
-                }
             } else {
                 console.log(`[Quo Webhook] Logging Answered Call for ${phone}`);
                 await logCall(contactId, `Answered call via Quo.`, 'Connected');

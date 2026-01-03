@@ -60,7 +60,10 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
     if (!phone.trim()) {
       newErrors.phone = 'Phone number is required';
     } else {
-      const cleanPhone = phone.replace(/\D/g, '');
+      let cleanPhone = phone.replace(/\D/g, '');
+      if (cleanPhone.length === 11 && cleanPhone.startsWith('1')) {
+        cleanPhone = cleanPhone.substring(1);
+      }
       if (cleanPhone.length !== 10) {
         newErrors.phone = 'Please enter a valid 10-digit US phone number';
       }

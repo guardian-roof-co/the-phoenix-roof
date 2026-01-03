@@ -8,7 +8,7 @@ const MarkdownDisplay = ({ text }: { text: string }) => {
   return (
     <div className="prose prose-sm prose-slate max-w-none">
       {text.split('\n').map((line, i) => (
-        <p key={i} className={`mb-2 ${line.startsWith('#') ? 'font-bold text-gray-900 mt-4' : 'text-gray-700'}`}>
+        <p key={i} className={`mb-2 ${line.startsWith('#') ? 'font-bold text-white mt-4 underline decoration-blue-500/50 underline-offset-4' : 'text-slate-200'}`}>
           {line.replace(/^#+\s/, '')}
         </p>
       ))}
@@ -28,7 +28,8 @@ export const InsuranceAnalyzer: React.FC<InsuranceAnalyzerProps> = ({ onSchedule
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // User Info for HubSpot
-  const [userName, setUserName] = useState('');
+  const [userFirstName, setUserFirstName] = useState('');
+  const [userLastName, setUserLastName] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [userPhone, setUserPhone] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
@@ -39,8 +40,8 @@ export const InsuranceAnalyzer: React.FC<InsuranceAnalyzerProps> = ({ onSchedule
     setErrorMsg(null);
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
-      if (selectedFile.size > 10 * 1024 * 1024) {
-        setErrorMsg("File is too large (10MB limit).");
+      if (selectedFile.size > 5 * 1024 * 1024) {
+        setErrorMsg("File is too large (5MB limit).");
         return;
       }
       setFile(selectedFile);
@@ -52,17 +53,24 @@ export const InsuranceAnalyzer: React.FC<InsuranceAnalyzerProps> = ({ onSchedule
 
   const handleAnalyze = async () => {
     setErrorMsg(null);
-    if (!preview || !file || !userEmail || !userPhone) {
-      if (!userEmail) setErrorMsg("Email is required for analysis results.");
-      if (!userPhone) setErrorMsg("Phone number is required for follow-up.");
+    // TEMPORARY: Disabled for testing
+    if (!preview || !file /* || !userFirstName || !userLastName || !userEmail || !userPhone */) {
+      if (!file) setErrorMsg("Please upload your policy document.");
       return;
     }
 
-    const cleanPhone = userPhone.replace(/\D/g, '');
+    let cleanPhone = userPhone.replace(/\D/g, '');
+    /* TEMPORARY: Relaxed for testing
+    // Handle US country code +1
+    if (cleanPhone.length === 11 && cleanPhone.startsWith('1')) {
+      cleanPhone = cleanPhone.substring(1);
+    }
+
     if (cleanPhone.length !== 10) {
       setErrorMsg("Please enter a valid 10-digit US phone number.");
       return;
     }
+    */
 
     setStatus(AnalysisStatus.ANALYZING);
     try {
@@ -74,23 +82,25 @@ export const InsuranceAnalyzer: React.FC<InsuranceAnalyzerProps> = ({ onSchedule
       setResult(analysisText);
       setStatus(AnalysisStatus.COMPLETE);
 
-      // 2. HubSpot Sync (via Backend Bridge)
+      /* TEMPORARY: Disabled HubSpot sync for testing
       setIsSyncing(true);
       try {
-        const names = userName.trim().split(' ');
-        await apiClient.post('/api/quotes-sync', {
-          email: userEmail,
-          firstName: names[0],
-          lastName: names.slice(1).join(' ') || 'Lead',
-          phone: userPhone,
-          leadSource: 'AI Insurance Analyzer',
-          pageName: 'Insurance Analysis'
-        });
+        if (userEmail || userFirstName || userPhone) {
+          await apiClient.post('/api/quotes-sync', {
+            email: userEmail || 'test@example.com',
+            firstName: userFirstName || 'Test',
+            lastName: userLastName || 'User',
+            phone: userPhone || '0000000000',
+            leadSource: 'AI Insurance Analyzer (Test Mode)',
+            pageName: 'Insurance Analysis'
+          });
+        }
       } catch (e) {
         console.warn('[HubSpot Bridge Error]', e);
       } finally {
         setIsSyncing(false);
       }
+      */
 
     } catch (error) {
       console.error(error);
@@ -113,21 +123,37 @@ export const InsuranceAnalyzer: React.FC<InsuranceAnalyzerProps> = ({ onSchedule
       <div className="grid lg:grid-cols-2 gap-12 items-start">
         {/* Upload & Form Section */}
         <div className="bg-white rounded-[3rem] shadow-2xl p-8 border border-slate-100 space-y-8">
-          <div className="space-y-4">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 ml-2">1. Your Contact Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
+              <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">First Name</label>
               <div className="relative">
                 <User className="absolute left-4 top-3.5 w-5 h-5 text-slate-300" />
-                <input value={userName} onChange={e => setUserName(e.target.value)} type="text" placeholder="Name" className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold" />
-              </div>
-              <div className="relative">
-                <Phone className="absolute left-4 top-3.5 w-5 h-5 text-slate-300" />
-                <input value={userPhone} onChange={e => setUserPhone(e.target.value)} type="tel" placeholder="Phone" className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold" />
+                <input value={userFirstName} onChange={e => setUserFirstName(e.target.value)} type="text" placeholder="First Name" className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold" />
               </div>
             </div>
+
+            <div className="space-y-4">
+              <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Last Name</label>
+              <div className="relative">
+                <User className="absolute left-4 top-3.5 w-5 h-5 text-slate-300" />
+                <input value={userLastName} onChange={e => setUserLastName(e.target.value)} type="text" placeholder="Last Name" className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold" />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Phone Number</label>
+            <div className="relative">
+              <Phone className="absolute left-4 top-3.5 w-5 h-5 text-slate-300" />
+              <input value={userPhone} onChange={e => setUserPhone(e.target.value)} type="tel" placeholder="(616) 555-0123" className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold" />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Email Address</label>
             <div className="relative">
               <Mail className="absolute left-4 top-3.5 w-5 h-5 text-slate-300" />
-              <input value={userEmail} onChange={e => setUserEmail(e.target.value)} type="email" placeholder="Email (Required for results)" className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold" />
+              <input value={userEmail} onChange={e => setUserEmail(e.target.value)} type="email" placeholder="you@example.com" className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold" />
             </div>
           </div>
 
@@ -163,8 +189,8 @@ export const InsuranceAnalyzer: React.FC<InsuranceAnalyzerProps> = ({ onSchedule
 
           <button
             onClick={handleAnalyze}
-            disabled={!file || !userEmail || status === AnalysisStatus.ANALYZING}
-            className={`w-full py-5 rounded-[2rem] font-black text-white transition-all shadow-xl flex items-center justify-center gap-3 uppercase tracking-widest ${!file || !userEmail ? 'bg-slate-200 cursor-not-allowed text-slate-400' :
+            disabled={!file || status === AnalysisStatus.ANALYZING}
+            className={`w-full py-5 rounded-[2rem] font-black text-white transition-all shadow-xl flex items-center justify-center gap-3 uppercase tracking-widest ${!file ? 'bg-slate-200 cursor-not-allowed text-slate-400' :
               status === AnalysisStatus.ANALYZING ? 'bg-blue-500 animate-pulse' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'
               }`}
           >

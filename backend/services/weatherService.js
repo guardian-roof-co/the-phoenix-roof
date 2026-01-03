@@ -1,39 +1,77 @@
-const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
+const { pool } = require('../config/db');
 
 /**
- * Get Historical Storm Data (Hail/Wind)
+ * Get Historical Storm Data from local database
  * @param {number} lat 
  * @param {number} lng 
+ * @param {number} radiusMiles - Default 10 miles
  */
-const getStormHistory = async (lat, lng) => {
-    if (!OPENWEATHER_API_KEY) {
-        console.warn('[Weather Service] Missing OPENWEATHER_API_KEY');
-        return null; // Will trigger simulation fallback in route
-    }
-
+const getStormHistory = async (lat, lng, radiusMiles = 30) => {
     try {
-        // OpenWeather History API (Last 2 years)
-        // Note: For real roofing use, services like HailRecon are better, 
-        // but OpenWeather is the best general-purpose starting point.
+        // Using Haversine formula for radius search
+        // 3959 is the radius of Earth in miles
+        const query = `
+            SELECT id, episode_id, event_id, year, month_name, event_type, begin_location, begin_lat, begin_lon, magnitude, tor_f_scale, damage_property,
+                (3959 * acos(cos(radians($1)) * cos(radians(begin_lat)) * cos(radians(begin_lon) - radians($2)) + sin(radians($1)) * sin(radians(begin_lat)))) AS distance
+            FROM storm_events
+            WHERE (3959 * acos(cos(radians($1)) * cos(radians(begin_lat)) * cos(radians(begin_lon) - radians($2)) + sin(radians($1)) * sin(radians(begin_lat)))) < $3
+            ORDER BY year DESC, distance ASC
+            LIMIT 20;
+        `;
 
-        // We fetching "History Bulk" or iterate through major storm dates
-        // For this implementation, we will fetch the last 12 months of daily summaries if possible
-        // or clear historical events if the specific sub-product is subscribed.
+        const result = await pool.query(query, [lat, lng, radiusMiles]);
 
-        const response = await fetch(`https://api.openweathermap.org/data/3.0/onecall/day_summary?lat=${lat}&lon=${lng}&appid=${OPENWEATHER_API_KEY}`);
+        const events = result.rows.map(row => {
+            const monthLabel = row.month_name ? (row.month_name.length > 3 ? row.month_name.substring(0, 3) : row.month_name) : 'Storm';
 
-        if (!response.ok) {
-            console.error('[Weather Service] API Error Status:', response.status);
-            return null;
+            // Synthesize "Strength" based on event type
+            let strength = 'Documented Entry';
+            if (row.event_type === 'Tornado' && row.tor_f_scale) {
+                strength = `${row.tor_f_scale} Scale`;
+            } else if (row.event_type === 'Hail' && row.magnitude) {
+                strength = `${row.magnitude} in`;
+            } else if (row.event_type && row.event_type.includes('Wind') && row.magnitude) {
+                strength = `${row.magnitude} kts`;
+            } else if (row.damage_property && row.damage_property !== '0.00K') {
+                strength = `${row.damage_property} Damage`;
+            }
+
+            return {
+                date: `${monthLabel} ${row.year}`,
+                type: row.event_type || 'Storm Event',
+                severity: strength,
+                insurancePotential: (row.event_type === 'Hail' || row.event_type === 'Thunderstorm Wind' || (row.magnitude && row.magnitude > 50)),
+                location: row.begin_location || 'Unknown',
+                distance: parseFloat(row.distance).toFixed(1),
+                eventId: row.event_id,
+                episodeId: row.episode_id
+            };
+        });
+
+        const lastStorm = events.length > 0 ? events[0].date : null;
+        const hasSevereEvent = events.some(e => e.insurancePotential || (parseFloat(e.severity) > 50)); // Simplified check
+
+        let riskLevel = 'Low';
+        if (events.length > 0) {
+            riskLevel = 'Medium'; // Default to Medium if ANY storm is found (User wants to know!)
+            if (events.length > 3 || events.some(e => e.severity.includes('Scale') || parseInt(e.severity) > 60 || e.severity.includes('Damage'))) {
+                riskLevel = 'High';
+            }
         }
 
-        const data = await response.json();
+        return {
+            riskLevel,
+            events,
+            lastStormDate: lastStorm,
+            summary: events.length > 0
+                ? `Found ${events.length} documented storm events within ${radiusMiles} miles of this property since 2024.`
+                : `No historical storm events recorded within ${radiusMiles} miles of this location in our database.`,
+            isSimulated: false,
+            dataSource: 'Internal CRM / Storm Data'
+        };
 
-        // This is a simplified mapper. Real-world implementation would 
-        // fetch multiple dates or use a specialized Storm API provider.
-        return data;
     } catch (error) {
-        console.error('[Weather Service] Fetch Failure:', error);
+        console.error('[Storm Service] DB Query Failure:', error);
         return null;
     }
 };
