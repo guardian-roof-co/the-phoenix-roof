@@ -25,7 +25,7 @@ router.get('/storm-history', async (req, res) => {
                 riskLevel: 'Low',
                 events: [],
                 lastStormDate: null,
-                summary: "No historical storm events (Severe Thunderstorm/Hail) recorded by NWS for this location in the current alert window.",
+                summary: "No historical storm events (Severe Thunderstorm/Hail) recorded in our database for this location.",
                 isSimulated: false
             });
         }

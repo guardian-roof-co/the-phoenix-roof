@@ -25,6 +25,7 @@ COPY --from=builder /app/dist ./dist
 
 # Copy the server files
 COPY server.js ./
+COPY backend ./backend
 # If you have GCS key locally for testing, but in production, it's better to use Service Accounts
 # COPY gcs-key.json ./ 
 

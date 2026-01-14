@@ -3,6 +3,8 @@ const router = express.Router();
 const { pool } = require('../config/db');
 const { syncToHubSpot } = require('../services/hubspotService');
 const { syncAllBucketData } = require('../services/storageService');
+const { sendThankYouEmail } = require('../services/emailService');
+const { sendThankYouSMS } = require('../services/quoService');
 
 // --- LEADS ---
 router.get('/leads', async (req, res) => {
@@ -57,7 +59,7 @@ router.post('/quotes-sync', async (req, res) => {
         const rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
         const ipAddress = (typeof rawIp === 'string') ? rawIp.split(',')[0].trim() : rawIp;
         const referer = req.headers['referer'];
-        const { firstName, lastName, email, phone, address, date, time, notes, leadSource, hutk, utmSource, utmMedium, utmCampaign, utmTerm, utmContent } = req.body;
+        const { firstName, lastName, email, phone, address, date, time, notes, leadSource, estimatedCost, policyDocumentUrl, aiAnalysis, hutk, utmSource, utmMedium, utmCampaign, utmTerm, utmContent } = req.body;
 
         if (!phone) {
             return res.status(400).json({ error: "Phone number is required" });
@@ -94,6 +96,24 @@ router.post('/quotes-sync', async (req, res) => {
             success: (hubspotOk.status === 'fulfilled' && hubspotOk.value === true),
             dbPersisted: dbRes.status === 'fulfilled'
         });
+
+        // 3. Send Thank You Email on SUCCESS
+        if (hubspotOk.status === 'fulfilled' && hubspotOk.value === true) {
+            sendThankYouEmail({
+                email,
+                firstName,
+                leadSource,
+                estimatedCost
+            }).catch(e => console.error('[Quotes Sync Email Error]', e));
+
+            // 4. Send Thank You SMS
+            sendThankYouSMS({
+                phone,
+                firstName,
+                leadSource: leadSource || req.body.pageName,
+                estimatedCost
+            }).catch(e => console.error('[Quotes Sync SMS Error]', e));
+        }
     } catch (err) {
         console.error("Quotes Sync Error:", err);
         res.status(500).json({ error: "Failed to sync quote" });

@@ -12,7 +12,6 @@ const syncToHubSpot = async (leadData) => {
     }
 
     try {
-        console.log(`[HubSpot] Syncing lead: ${leadData.email} | IP: ${leadData.ipAddress || 'unknown'} | HUK: ${leadData.hutk || 'none'}`);
         const fields = [
             { name: 'email', value: leadData.email || 'pending@user.quote' },
             { name: 'firstname', value: leadData.firstName || '' },
@@ -29,6 +28,8 @@ const syncToHubSpot = async (leadData) => {
             { name: 'utm_campaign', value: leadData.utmCampaign || '' },
             { name: 'utm_term', value: leadData.utmTerm || '' },
             { name: 'utm_content', value: leadData.utmContent || '' },
+            { name: 'insurance_policy_url', value: leadData.policyDocumentUrl || '' },
+            { name: 'ai_analysis', value: leadData.aiAnalysis || '' },
         ];
 
         const payload = {
@@ -54,7 +55,7 @@ const syncToHubSpot = async (leadData) => {
             const err = await response.json();
             console.error('[HubSpot Form Error]', err);
         } else {
-            console.log(`[HubSpot] Sync successful for: ${leadData.email}`);
+            console.log(`[HubSpot] Form Sync successful for: ${leadData.email}`);
         }
         return response.ok;
     } catch (error) {

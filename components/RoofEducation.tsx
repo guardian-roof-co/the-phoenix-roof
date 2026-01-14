@@ -1,8 +1,10 @@
 import React from 'react';
 import { AlertTriangle, CheckCircle, Info } from 'lucide-react';
 
+import { OnScheduleHandler } from '../types';
+
 interface RoofEducationProps {
-  onSchedule: () => void;
+  onSchedule: OnScheduleHandler;
 }
 
 const PROBLEMS = [
@@ -56,17 +58,16 @@ export const RoofEducation: React.FC<RoofEducationProps> = ({ onSchedule }) => {
                 <div className="p-6 md:w-1/2 flex flex-col justify-center">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-bold text-xl text-slate-900">{problem.title}</h3>
-                    <span className={`text-xs font-bold px-2 py-1 rounded-full ${
-                      problem.severity === 'High' ? 'bg-red-100 text-red-800' : 
+                    <span className={`text-xs font-bold px-2 py-1 rounded-full ${problem.severity === 'High' ? 'bg-red-100 text-red-800' :
                       problem.severity === 'Medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'
-                    }`}>
+                      }`}>
                       {problem.severity} Risk
                     </span>
                   </div>
                   <p className="text-slate-600 text-sm mb-4">{problem.desc}</p>
                   <div className="mt-auto">
-                    <button 
-                      onClick={onSchedule}
+                    <button
+                      onClick={() => onSchedule(`Inquiry about ${problem.title} from Education Center. Severity: ${problem.severity}`, '')}
                       className="text-phoenix-600 font-semibold text-sm hover:text-phoenix-700 flex items-center gap-1"
                     >
                       Suspect this? Schedule Check <AlertTriangle className="w-4 h-4" />
@@ -85,7 +86,7 @@ export const RoofEducation: React.FC<RoofEducationProps> = ({ onSchedule }) => {
               You don't have to climb the ladder. Our certified inspectors use drones and expert eyes to find issues you might miss.
             </p>
             <button
-              onClick={onSchedule}
+              onClick={() => onSchedule('General professional inspection request from Education Center.', '')}
               className="bg-phoenix-600 hover:bg-phoenix-700 text-white px-8 py-4 rounded-lg font-bold text-lg transition shadow-lg shadow-phoenix-900/50"
             >
               Schedule Free Professional Inspection

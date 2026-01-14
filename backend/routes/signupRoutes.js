@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { pool } = require('../config/db');
 const { syncToHubSpot } = require('../services/hubspotService');
+const { sendThankYouEmail } = require('../services/emailService');
+const { sendThankYouSMS } = require('../services/quoService');
 
 router.post('/signups', async (req, res) => {
     const { firstName, lastName, email, phone, zip, leadSource, pageUri, hutk, utmSource, utmMedium, utmCampaign, utmTerm, utmContent } = req.body;
@@ -49,6 +51,20 @@ router.post('/signups', async (req, res) => {
         const success = (dbRes.status === 'fulfilled') || (hubspotOk.status === 'fulfilled' && hubspotOk.value === true);
 
         if (success) {
+            // 3. Send Thank You Email (Fire and forget, don't block response)
+            sendThankYouEmail({
+                email,
+                firstName,
+                leadSource
+            }).catch(e => console.error('[Signup Email Error]', e));
+
+            // 4. Send Thank You SMS
+            sendThankYouSMS({
+                phone,
+                firstName,
+                leadSource
+            }).catch(e => console.error('[Signup SMS Error]', e));
+
             res.json({ success: true, message: 'Signup processed successfully' });
         } else {
             throw new Error("Integrated sync failed");

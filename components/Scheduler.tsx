@@ -8,18 +8,21 @@ const GOOGLE_CALENDAR_BOOKING_URL = 'https://calendar.app.google/AUJDFzkqMMp8NQK
 
 interface SchedulerProps {
   initialNotes?: string;
+  initialAddress?: string;
+  initialCost?: number;
+  initialCustomerData?: { firstName?: string, lastName?: string, email?: string, phone?: string } | null;
 }
 
-export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
+export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes, initialAddress, initialCost, initialCustomerData }) => {
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { addAppointment } = useAuth();
 
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
+  const [firstName, setFirstName] = useState(initialCustomerData?.firstName || '');
+  const [lastName, setLastName] = useState(initialCustomerData?.lastName || '');
+  const [email, setEmail] = useState(initialCustomerData?.email || '');
+  const [phone, setPhone] = useState(initialCustomerData?.phone || '');
+  const [address, setAddress] = useState(initialAddress || '');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('Morning (8am - 12pm)');
   const [notes, setNotes] = useState(initialNotes || '');
@@ -96,8 +99,9 @@ export const Scheduler: React.FC<SchedulerProps> = ({ initialNotes }) => {
         date,
         time,
         notes,
-        leadSource: `Website Scheduler (${meetingType})`,
-        pageName: 'Scheduler'
+        leadSource: initialCost ? 'Instant Quote Scheduler' : `Website Scheduler (${meetingType})`,
+        pageName: initialCost ? 'Quote' : 'Scheduler',
+        estimatedCost: initialCost
       });
     } catch (e) {
       console.warn('[HubSpot Bridge Error]', e);

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Upload, FileText, Check, AlertTriangle, X, Shield, Bot, FileType, Mail, User, Phone, Loader2, ArrowLeft, Download, Zap, Sparkles } from 'lucide-react';
 import { analyzeInsurancePolicy } from '../services/geminiService';
-import { AnalysisStatus } from '../types';
+import { AnalysisStatus, OnScheduleHandler } from '../types';
 import { apiClient } from '../services/apiClient';
 
 const MarkdownDisplay = ({ text }: { text: string }) => {
@@ -17,7 +17,7 @@ const MarkdownDisplay = ({ text }: { text: string }) => {
 }
 
 interface InsuranceAnalyzerProps {
-  onSchedule: () => void;
+  onSchedule: OnScheduleHandler;
 }
 
 export const InsuranceAnalyzer: React.FC<InsuranceAnalyzerProps> = ({ onSchedule }) => {
@@ -26,6 +26,7 @@ export const InsuranceAnalyzer: React.FC<InsuranceAnalyzerProps> = ({ onSchedule
   const [status, setStatus] = useState<AnalysisStatus>(AnalysisStatus.IDLE);
   const [result, setResult] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [apiErrorMessage, setApiErrorMessage] = useState<string | null>(null);
 
   // User Info for HubSpot
   const [userFirstName, setUserFirstName] = useState('');
@@ -40,8 +41,8 @@ export const InsuranceAnalyzer: React.FC<InsuranceAnalyzerProps> = ({ onSchedule
     setErrorMsg(null);
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
-      if (selectedFile.size > 5 * 1024 * 1024) {
-        setErrorMsg("File is too large (5MB limit).");
+      if (selectedFile.size > 10 * 1024 * 1024) {
+        setErrorMsg("File is too large (10MB limit).");
         return;
       }
       setFile(selectedFile);
@@ -53,14 +54,31 @@ export const InsuranceAnalyzer: React.FC<InsuranceAnalyzerProps> = ({ onSchedule
 
   const handleAnalyze = async () => {
     setErrorMsg(null);
-    // TEMPORARY: Disabled for testing
-    if (!preview || !file /* || !userFirstName || !userLastName || !userEmail || !userPhone */) {
-      if (!file) setErrorMsg("Please upload your policy document.");
+
+    // Validation: Require all fields
+    if (!file) {
+      setErrorMsg("Please upload your policy document.");
+      return;
+    }
+    if (!userFirstName || !userLastName) {
+      setErrorMsg("Please enter your full name.");
+      return;
+    }
+    if (!userEmail) {
+      setErrorMsg("Please enter your email address.");
+      return;
+    }
+    if (!userPhone) {
+      setErrorMsg("Please enter your phone number.");
+      return;
+    }
+    if (!preview) {
+      setErrorMsg("File processing error. Please re-upload.");
       return;
     }
 
     let cleanPhone = userPhone.replace(/\D/g, '');
-    /* TEMPORARY: Relaxed for testing
+
     // Handle US country code +1
     if (cleanPhone.length === 11 && cleanPhone.startsWith('1')) {
       cleanPhone = cleanPhone.substring(1);
@@ -70,7 +88,6 @@ export const InsuranceAnalyzer: React.FC<InsuranceAnalyzerProps> = ({ onSchedule
       setErrorMsg("Please enter a valid 10-digit US phone number.");
       return;
     }
-    */
 
     setStatus(AnalysisStatus.ANALYZING);
     try {
@@ -78,32 +95,34 @@ export const InsuranceAnalyzer: React.FC<InsuranceAnalyzerProps> = ({ onSchedule
       let mimeType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
 
       // 1. AI Analysis via Gemini
-      const analysisText = await analyzeInsurancePolicy(base64Data, mimeType);
-      setResult(analysisText);
+      const { analysis, fileUrl } = await analyzeInsurancePolicy(base64Data, mimeType, userEmail);
+      setResult(analysis);
       setStatus(AnalysisStatus.COMPLETE);
 
-      /* TEMPORARY: Disabled HubSpot sync for testing
+      // CRM Sync: Create Contact & Deal immediately
       setIsSyncing(true);
       try {
-        if (userEmail || userFirstName || userPhone) {
-          await apiClient.post('/api/quotes-sync', {
-            email: userEmail || 'test@example.com',
-            firstName: userFirstName || 'Test',
-            lastName: userLastName || 'User',
-            phone: userPhone || '0000000000',
-            leadSource: 'AI Insurance Analyzer (Test Mode)',
-            pageName: 'Insurance Analysis'
-          });
-        }
+        await apiClient.post('/api/quotes-sync', {
+          email: userEmail,
+          firstName: userFirstName,
+          lastName: userLastName,
+          phone: cleanPhone,
+          leadSource: 'AI Insurance Analyzer',
+          pageName: 'Insurance Analysis',
+          policyDocumentUrl: fileUrl,
+          aiAnalysis: analysis
+        });
       } catch (e) {
         console.warn('[HubSpot Bridge Error]', e);
+        // Don't block the UI, just log the error
       } finally {
         setIsSyncing(false);
       }
-      */
 
-    } catch (error) {
+
+    } catch (error: any) {
       console.error(error);
+      setApiErrorMessage(error.message || "AI Analysis failed");
       setStatus(AnalysisStatus.ERROR);
     }
   };
@@ -159,10 +178,10 @@ export const InsuranceAnalyzer: React.FC<InsuranceAnalyzerProps> = ({ onSchedule
 
           <div className="space-y-4">
             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 ml-2">2. Policy Upload</h3>
-            <div
-              className={`border-2 border-dashed rounded-[2.5rem] h-64 flex flex-col items-center justify-center transition-all overflow-hidden relative ${preview ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-blue-400 hover:bg-slate-50'
+            <label
+              htmlFor="policy-upload"
+              className={`border-2 border-dashed rounded-[2.5rem] h-64 flex flex-col items-center justify-center transition-all overflow-hidden relative cursor-pointer ${preview ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-blue-400 hover:bg-slate-50'
                 }`}
-              onClick={() => fileInputRef.current?.click()}
             >
               {preview ? (
                 <div className="relative w-full h-full p-4 flex items-center justify-center">
@@ -183,8 +202,8 @@ export const InsuranceAnalyzer: React.FC<InsuranceAnalyzerProps> = ({ onSchedule
                   <p className="text-xs text-slate-400 mt-2 font-medium">PDF or Image up to 10MB</p>
                 </div>
               )}
-              <input type="file" ref={fileInputRef} className="hidden" accept=".pdf,image/*" onChange={handleFileChange} />
-            </div>
+              <input id="policy-upload" type="file" ref={fileInputRef} className="hidden" accept=".pdf,image/*" onChange={handleFileChange} />
+            </label>
           </div>
 
           <button
@@ -230,7 +249,8 @@ export const InsuranceAnalyzer: React.FC<InsuranceAnalyzerProps> = ({ onSchedule
             {status === AnalysisStatus.ERROR && (
               <div className="text-center text-red-400 mt-10">
                 <AlertTriangle className="w-12 h-12 mx-auto mb-4" />
-                <p className="font-black text-xs uppercase tracking-widest">AI Failure. Please try again with a clearer image.</p>
+                <p className="font-black text-xs uppercase tracking-widest">{apiErrorMessage || "AI Failure. Please try again with a clearer image."}</p>
+                {apiErrorMessage?.includes('413') && <p className="text-[10px] mt-2 opacity-70">The file is too large for our server to process as a single request.</p>}
               </div>
             )}
 
@@ -244,10 +264,45 @@ export const InsuranceAnalyzer: React.FC<InsuranceAnalyzerProps> = ({ onSchedule
                   <MarkdownDisplay text={result} />
                 </div>
 
-                <div className="mt-10 pt-8 border-t border-white/10">
-                  <p className="text-sm text-slate-400 mb-6 font-medium">Found gaps? Let's discuss them in person.</p>
-                  <button onClick={onSchedule} className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-blue-500 transition-all shadow-xl">
-                    Schedule Free Expert Review
+                <div className="mt-10 pt-8 border-t border-white/10 space-y-6">
+                  <div>
+                    <h4 className="text-blue-400 font-black text-xs uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                      <Zap className="w-4 h-4" />
+                      Considering a Claim?
+                    </h4>
+                    <p className="text-[13px] text-slate-400 font-medium leading-relaxed mb-4">
+                      Roof claims get complicated fast—especially with deductibles, depreciation, and adjuster interpretation. We help you navigate the process <span className="text-white font-bold">before you commit.</span>
+                    </p>
+
+                    <div className="space-y-3 mb-6">
+                      {[
+                        "Is the damage actually claim-worthy?",
+                        "What an adjuster will approve vs deny",
+                        "How depreciation & deductibles shake out",
+                        "File a claim or pay out of pocket?"
+                      ].map((item, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <Check className="w-3.5 h-3.5 text-blue-500 shrink-0 mt-0.5" />
+                          <p className="text-[11px] font-black text-slate-200 uppercase tracking-widest italic">{item}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <p className="text-[11px] text-slate-500 font-medium leading-relaxed italic">
+                      Make an informed decision before you trigger a claim on your record. Phoenix can walk the roof, review the situation, and advocate for a fair scope of repairs.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => onSchedule(
+                      'I have analyzed my insurance policy and would like a second set of experienced eyes to walk the roof before I decide to file a claim.',
+                      '',
+                      undefined,
+                      { firstName: userFirstName, lastName: userLastName, email: userEmail, phone: userPhone }
+                    )}
+                    className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-blue-500 transition-all shadow-xl"
+                  >
+                    Talk to a Project Guide
                   </button>
                 </div>
               </div>

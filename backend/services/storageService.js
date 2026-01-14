@@ -3,10 +3,22 @@ const csv = require('fast-csv');
 const path = require('path');
 const pool = require('../config/db');
 
-const storage = new Storage({
-    keyFilename: path.join(__dirname, '../../gcs-key.json'),
+const fs = require('fs');
+const keyPath = path.join(__dirname, '../../gcs-key.json');
+
+// Initialize Storage: Use local key if exists, otherwise fall back to Application Default Credentials (ADC)
+const storageOptions = {
     projectId: 'guardian-478113'
-});
+};
+
+if (fs.existsSync(keyPath)) {
+    console.log('[Storage] Initializing with local key file.');
+    storageOptions.keyFilename = keyPath;
+} else {
+    console.log('[Storage] Local key not found. Using Application Default Credentials.');
+}
+
+const storage = new Storage(storageOptions);
 
 const BUCKET_NAME = 'west-michigan-roof';
 
@@ -107,6 +119,45 @@ const syncAllBucketData = async () => {
     }
 };
 
+const uploadFile = async (base64Data, filename, mimeType) => {
+    try {
+        const bucket = storage.bucket(BUCKET_NAME);
+        const file = bucket.file(`policies/${filename}`);
+        const buffer = Buffer.from(base64Data, 'base64');
+
+        await file.save(buffer, {
+            metadata: { contentType: mimeType },
+            resumable: false
+        });
+
+        // For sensitive insurance policies, we use Signed URLs that expire
+        // NOTE: This requires a Service Account identity (client_email).
+        // If running locally without gcs-key.json, this will fail.
+        let signedUrl;
+        try {
+            [signedUrl] = await file.getSignedUrl({
+                version: 'v4',
+                action: 'read',
+                expires: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
+            });
+        } catch (signErr) {
+            console.error('[Storage] Signed URL generation failed.');
+            if (signErr.message.includes('client_email')) {
+                console.warn('[Storage] CRITICAL: Signed URLs require a Service Account key file (gcs-key.json) with a "client_email" property.');
+                console.warn('[Storage] If you are running locally, please ensure gcs-key.json exists in the project root.');
+            }
+            throw signErr;
+        }
+
+        console.log(`[Storage] File uploaded to GCS. Signed URL generated.`);
+        return signedUrl;
+    } catch (error) {
+        console.error('[Storage] Upload Error:', error);
+        throw error;
+    }
+};
+
 module.exports = {
-    syncAllBucketData
+    syncAllBucketData,
+    uploadFile
 };

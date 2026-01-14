@@ -46,12 +46,27 @@ const analyzeInsurancePolicy = async (fileBase64, mimeType) => {
 
         const streamingResp = await generativeModel.generateContentStream(request);
         const response = await streamingResp.response;
-        const fullText = response.candidates[0].content.parts[0].text;
 
+        if (!response.candidates || response.candidates.length === 0) {
+            console.warn('[AI Service] No candidates returned from Vertex AI. Document may have been blocked or misunderstood.');
+            return "AI could not process this document. Please ensure it is a clear image of an insurance policy.";
+        }
+
+        const candidate = response.candidates[0];
+        if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
+            console.warn('[AI Service] Candidate returned but had no content parts.');
+            return "AI could not extract text from this document. Please try a clearer photo.";
+        }
+
+        const fullText = candidate.content.parts[0].text;
         return fullText || "AI could not process the policy. Please ensure the upload is clear.";
     } catch (error) {
-        console.error('[AI Service] Vertex AI Error:', error);
-        throw new Error('Policy analysis failed. Please try again later.');
+        console.error('[AI Service] Vertex AI Error:', error.message || error);
+        // Provide a bit more context if it's a known safety block
+        if (error.message?.includes('SAFETY')) {
+            throw new Error('Analysis blocked by safety filters. Please ensure the document contains only insurance policy information.');
+        }
+        throw new Error(error.message || 'Policy analysis failed.');
     }
 };
 
@@ -116,8 +131,8 @@ const analyzeRoofCondition = async (streetViewBase64, userImages) => {
 
         return fullText || "Analysis failed.";
     } catch (error) {
-        console.error('[AI Service] Vertex AI Roof Analysis Error:', error);
-        throw new Error('Roof analysis failed.');
+        console.error('[AI Service] Vertex AI Roof Analysis Error:', error.message || error);
+        throw new Error(error.message || 'Roof analysis failed.');
     }
 };
 
@@ -148,8 +163,8 @@ const chatWithAssistant = async (userMessage) => {
 
         return fullText || "I'm having trouble connecting right now. Please try again.";
     } catch (error) {
-        console.error('[AI Service] Chat Error:', error);
-        throw new Error('Chat failed.');
+        console.error('[AI Service] Chat Error:', error.message || error);
+        throw new Error(error.message || 'Chat failed.');
     }
 };
 

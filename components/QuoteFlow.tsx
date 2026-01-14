@@ -1,21 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Loader2, Info, ChevronRight, Settings2, Sliders, ShieldCheck, TrendingUp, Hammer, Info as InfoIcon } from 'lucide-react';
-import { RoofMaterial, StormReport } from '../types';
+import { MapPin, Shield, Star, Hammer, Wrench, ShieldAlert, CheckCircle2, Bot, ChevronRight, Ruler, Plus, Minus, Info, Camera, Calendar, ArrowRight, Zap, Loader2, Settings2, Sliders, ShieldCheck, TrendingUp, Info as InfoIcon } from 'lucide-react';
+import { RoofMaterial, OnScheduleHandler, StormReport } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { getStormHistory } from '../services/stormService';
 import { apiClient } from '../services/apiClient';
+import { useGooglePlaces } from '../hooks/useGooglePlaces';
 
 interface QuoteFlowProps {
     initialLocation?: { address: string, coords?: { lat: number, lng: number } } | null;
-    onSchedule: (notes?: string) => void;
+    onSchedule: OnScheduleHandler;
 }
 
 // Localized Grand Rapids, Michigan Pricing Logic
 // Factors in local labor rates and MI code requirements (Ice & Water shield, etc.)
 const MATERIALS: RoofMaterial[] = [
-    { id: 'asphalt-shingle', name: 'Architectural Shingle', description: 'Owens Corning Duration - 616 Standard.', costPerSqFt: 6.25, lifespan: '25-30 Years', image: 'https://images.unsplash.com/photo-1632759162352-714087b3287a?q=80&w=400&auto=format&fit=crop' },
-    { id: 'metal-seam', name: 'Standing Seam Metal', description: 'Lifetime Snow Shedding & Durability.', costPerSqFt: 14.75, lifespan: '50+ Years', image: 'https://images.unsplash.com/photo-1628151241103-6258417c800b?q=80&w=400&auto=format&fit=crop' },
-    { id: 'synthetic-slate', name: 'EuroShield / Synthetic', description: 'Class 4 Hail Rating - Premium Look.', costPerSqFt: 19.95, lifespan: '50+ Years', image: 'https://images.unsplash.com/photo-1620603720760-49666063f66e?q=80&w=400&auto=format&fit=crop' }
+    { id: 'asphalt-shingle', name: 'Architectural Shingle', description: 'Owens Corning Duration - 616 Standard.', costPerSqFt: 6.25, lifespan: '25-30 Years', image: '/images/roofing/asphalt-shingle.png' },
+    { id: 'metal-seam', name: 'Standing Seam Metal', description: 'Lifetime Snow Shedding & Durability.', costPerSqFt: 14.75, lifespan: '50+ Years', image: '/images/roofing/metal-seam.png' },
+    { id: 'synthetic-slate', name: 'EuroShield / Synthetic', description: 'Class 4 Hail Rating - Premium Look.', costPerSqFt: 19.95, lifespan: '50+ Years', image: '/images/roofing/synthetic-slate.png' }
 ];
 
 const PITCH_OPTIONS = [
@@ -38,6 +39,9 @@ export const QuoteFlow: React.FC<QuoteFlowProps> = ({ initialLocation, onSchedul
     const [inputValue, setInputValue] = useState(initialLocation?.address || '');
     const [isMeasuring, setIsMeasuring] = useState(false);
     const [roofArea, setRoofArea] = useState<number>(0);
+    const [detectedAreaSqFt, setDetectedAreaSqFt] = useState<number>(0);
+    const [isManualMode, setIsManualMode] = useState(false);
+    const [isDetected, setIsDetected] = useState(false);
 
     // Complexity & Pricing Factors
     const [pitch, setPitch] = useState(PITCH_OPTIONS[1]);
@@ -48,54 +52,62 @@ export const QuoteFlow: React.FC<QuoteFlowProps> = ({ initialLocation, onSchedul
     const { saveQuote } = useAuth();
 
     const mapRef = useRef<HTMLDivElement>(null);
-    const autoCompleteRef = useRef<HTMLInputElement>(null);
     const googleMapInstance = useRef<any | null>(null);
 
-    useEffect(() => {
-        if (step === 1 && window.google && autoCompleteRef.current) {
-            const autocomplete = new window.google.maps.places.Autocomplete(autoCompleteRef.current, {
-                types: ['address'],
-                componentRestrictions: { country: 'us' }
-            });
-            autocomplete.addListener('place_changed', () => {
-                const place = autocomplete.getPlace();
-                if (place.geometry && place.geometry.location) {
-                    setAddress(place.formatted_address || '');
-                    setInputValue(place.formatted_address || '');
-                    setCoordinates({ lat: place.geometry.location.lat(), lng: place.geometry.location.lng() });
-                    setStep(2);
-                }
-            });
-        }
-    }, [step]);
+    // Use Custom Hook for Autocomplete
+    const { inputRef: autoCompleteRef } = useGooglePlaces((selectedAddress, lat, lng) => {
+        setAddress(selectedAddress);
+        setInputValue(selectedAddress);
+        setCoordinates({ lat, lng });
 
-    useEffect(() => {
-        if (step === 2 && coordinates && window.google) {
-            setIsMeasuring(true);
-            if (mapRef.current && !googleMapInstance.current) {
-                googleMapInstance.current = new window.google.maps.Map(mapRef.current, {
-                    center: coordinates,
-                    zoom: 20,
-                    mapTypeId: 'satellite',
-                    tilt: 0,
-                    disableDefaultUI: true,
-                    draggable: false,
-                });
-            }
+        // Auto-advance logic
+        setTimeout(() => setStep(2), 500);
+    });
 
-            // Fetch real area from Google Solar API via our backend
+    const [apiError, setApiError] = useState<string | null>(null);
+
+    // -------------------------------------------------------------
+    // Step 2: Google Solar API Integration (The "WOW" Factor)
+    // -------------------------------------------------------------
+    useEffect(() => {
+        if (step === 2 && coordinates && mapRef.current && window.google) {
+
+            // 1. Initialize Map centered on home
+            googleMapInstance.current = new window.google.maps.Map(mapRef.current, {
+                center: coordinates,
+                zoom: 20,
+                mapTypeId: 'satellite',
+                tilt: 0,
+                disableDefaultUI: true,
+            });
+
+            // 2. Solar API: Measure Roof Area
             const fetchRoofData = async () => {
+                setIsMeasuring(true);
+                setApiError(null);
                 try {
-                    const data = await apiClient.get(`/api/roof-measure?lat=${coordinates.lat}&lng=${coordinates.lng}`);
-                    if (data && data.areaSqFt) {
+                    // Call backend which securely calls Google Solar API
+                    const data = await apiClient.get(`/ api / solar - roof ? lat = ${coordinates.lat}& lng=${coordinates.lng} `);
+
+                    if (data && data.status === 'SUCCESS' && data.areaSqFt > 0) {
                         setRoofArea(data.areaSqFt);
+                        setDetectedAreaSqFt(data.areaSqFt);
+                        setIsDetected(true);
+                        setIsManualMode(false);
                     } else {
-                        // Fallback to estimate if API fails or building not found
-                        setRoofArea(2400);
+                        // Fallback logic handled in UI (slider for manual input)
+                        setRoofArea(0);
+                        setIsDetected(false);
+                        setIsManualMode(true);
+                        if (data.message) setApiError(data.message);
                     }
-                } catch (err) {
-                    console.error('[QuoteFlow] Solar API failed, using fallback', err);
-                    setRoofArea(2400);
+
+                } catch (e: any) {
+                    console.error("Solar API Error:", e);
+                    setRoofArea(0);
+                    setIsDetected(false);
+                    setIsManualMode(true);
+                    setApiError(e.message || "Satellite auto-measurement unavailable for this location.");
                 } finally {
                     setIsMeasuring(false);
                 }
@@ -105,307 +117,272 @@ export const QuoteFlow: React.FC<QuoteFlowProps> = ({ initialLocation, onSchedul
         }
     }, [step, coordinates]);
 
-    const calculateTotal = () => {
-        const basePrice = roofArea * selectedMaterial.costPerSqFt;
-        // Add MI Code Buffer ($500 fixed + factors)
-        const miCodeBuffer = 500;
-        return Math.round((basePrice * pitch.factor * complexity.factor) + miCodeBuffer);
+
+    // -------------------------------------------------------------
+    // Pricing Algorithm
+    // -------------------------------------------------------------
+    const calculateEstimate = () => {
+        // Base Cost = Area * Material Cost
+        let total = roofArea * selectedMaterial.costPerSqFt;
+
+        // Pitch Multiplier (Steeper = More labor/safety gear)
+        total *= pitch.factor;
+
+        // Complexity Multiplier (More partial cuts/waste)
+        total *= complexity.factor;
+
+        // Waste Factor (Standard 10-15%)
+        total *= 1.15;
+
+        return Math.round(total / 100) * 100; // Round to nearest 100
     };
 
-    const total = calculateTotal();
-    const maxProject = 55000;
-    const percentage = Math.min((total / maxProject) * 100, 100);
-
-    const handleFinalize = async () => {
+    const handleSaveQuote = async () => {
         setIsSubmitting(true);
-
-        const summary = `
-Instant Quote Detail:
-- Address: ${address}
-- Material: ${selectedMaterial.name}
-- Pitch: ${pitch.label}
-- Complexity: ${complexity.label}
-- Estimated Sq Ft: ${roofArea}
-- Total Estimate: $${total.toLocaleString()}
-    `;
-
-        /* 
-        TODO: Re-enable HubSpot sync for Instant Quotes once contact capture is added.
-        Currently disabled to prevent errors due to missing phone numbers.
-        
-        try {
-            await apiClient.post('/api/quotes-sync', {
-                email: 'pending@user.quote',
-                leadSource: 'Instant Quote Engine',
-                pageName: 'Instant Quote'
-            });
-        } catch (e) {
-            console.warn('[HubSpot Bridge Failure]', e);
-        }
-        */
-
-        saveQuote({
+        const quote = {
             id: crypto.randomUUID(),
             date: new Date().toISOString(),
-            address,
-            zipCode: '',
-            roofAreaSqFt: roofArea,
+            address: address,
+            zipCode: '32822', // Mock
+            roofAreaSqFt: Math.round(roofArea),
             material: selectedMaterial,
-            estimatedCost: total
-        });
-
+            estimatedCost: calculateEstimate()
+        };
+        await saveQuote(quote);
         setIsSubmitting(false);
-        onSchedule(summary);
+        onSchedule(`Quote Generated: $${calculateEstimate().toLocaleString()} for ${selectedMaterial.name}`, address, calculateEstimate());
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 pb-20 pt-10">
+        <div className="max-w-4xl mx-auto">
+
+            {/* Step 1: Address Input (Premium Hero Style) */}
             {step === 1 && (
-                <div className="max-w-2xl mx-auto px-4 mt-20">
-                    <div className="bg-white p-12 rounded-[3.5rem] shadow-2xl text-center border border-slate-100">
-                        <div className="bg-slate-900 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl">
-                            <MapPin className="w-10 h-10 text-phoenix-500" />
-                        </div>
-                        <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tighter italic uppercase">Local GR Quote</h2>
-                        <p className="text-slate-500 font-medium mb-10 italic">Grand Rapids specific pricing including Michigan building code standards.</p>
+                <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 p-8 md:p-12 text-center">
+                    <div className="inline-flex items-center justify-center p-3 bg-blue-50 rounded-full mb-6">
+                        <MapPin className="w-8 h-8 text-phoenix-600" />
+                    </div>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-4">Let's Measure Your Roof</h2>
+                    <p className="text-gray-500 mb-8 max-w-lg mx-auto">
+                        Enter your address to instantly get a satellite-based roof measurement and a precise material estimate.
+                    </p>
 
-                        <div className="relative">
-                            <MapPin className="absolute left-5 top-5 h-6 w-6 text-slate-300" />
-                            <input
-                                ref={autoCompleteRef}
-                                type="text"
-                                placeholder="Enter property address..."
-                                value={inputValue}
-                                onChange={(e) => setInputValue(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && setStep(2)}
-                                className="w-full pl-14 pr-6 py-6 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:ring-4 focus:ring-phoenix-100 focus:border-phoenix-500 outline-none font-black text-lg text-slate-900 transition-all"
-                            />
-                        </div>
-
+                    <div className="max-w-xl mx-auto relative">
+                        <input
+                            ref={autoCompleteRef}
+                            type="text"
+                            className="w-full p-4 pl-6 text-lg border-2 border-gray-200 rounded-2xl focus:border-phoenix-500 focus:ring-4 focus:ring-phoenix-100 transition outline-none"
+                            placeholder="Enter your street address..."
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                        />
                         <button
-                            onClick={() => setStep(2)}
-                            className="w-full mt-6 bg-slate-900 hover:bg-black text-white font-black py-4 rounded-2xl text-xs uppercase tracking-[0.2em] shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center gap-2 group"
+                            className="absolute right-2 top-2 bg-slate-900 text-white p-3 rounded-xl hover:bg-slate-800 transition"
+                            onClick={() => { if (coordinates) setStep(2) }}
                         >
-                            Next Step <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                            <ChevronRight className="w-5 h-5" />
                         </button>
-
-                        <div className="mt-8 flex items-center justify-center gap-6 text-slate-400 font-black text-[10px] uppercase tracking-widest">
-                            <div className="flex items-center gap-1.5"><ShieldCheck className="w-4 h-4" /> 616 Native</div>
-                            <div className="flex items-center gap-1.5"><Hammer className="w-4 h-4" /> Owens Corning</div>
-                        </div>
                     </div>
                 </div>
             )}
 
+            {/* Step 2: Satellite Analysis & Configuration (The Dashboard) */}
             {step === 2 && (
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
-                    <div className="flex flex-col lg:flex-row gap-12">
+                <div className="grid lg:grid-cols-2 gap-8">
 
-                        {/* Left Column: Visuals & Controls */}
-                        <div className="lg:w-2/3 space-y-10">
-                            {/* Satellite View Card */}
-                            <div className="bg-white rounded-[3.5rem] shadow-2xl border-4 border-white overflow-hidden h-[450px] relative group">
-                                {isMeasuring && (
-                                    <div className="absolute inset-0 z-20 bg-slate-900/80 backdrop-blur-md flex flex-col items-center justify-center text-white">
-                                        <Loader2 className="w-12 h-12 text-phoenix-500 animate-spin mb-4" />
-                                        <p className="font-black uppercase tracking-[0.3em] text-xs">Calibrating Satellite...</p>
-                                    </div>
-                                )}
-                                <div ref={mapRef} className="w-full h-full grayscale-[0.1] contrast-[1.1]" />
-                                {/* Visual Overlay Target */}
-                                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                                    <div className="w-64 h-64 border-2 border-dashed border-white/30 rounded-full flex items-center justify-center">
-                                        <div className="w-32 h-32 border border-white/10 rounded-full"></div>
-                                    </div>
-                                    <div className="absolute top-8 left-8 bg-slate-900/80 px-4 py-2 rounded-2xl border border-white/10">
-                                        <p className="text-[10px] text-phoenix-400 font-black uppercase tracking-widest">Target Verified</p>
-                                    </div>
+                    {/* Left: Satellite Visualizer */}
+                    <div className="space-y-6">
+                        <div className="bg-slate-900 rounded-3xl overflow-hidden shadow-2xl relative aspect-[4/3] group">
+                            <div ref={mapRef} className="w-full h-full opacity-90 group-hover:opacity-100 transition duration-700" />
+
+                            {/* Overlay UI */}
+                            <div className="absolute inset-0 pointer-events-none p-6 flex flex-col justify-between bg-gradient-to-t from-black/80 via-transparent to-black/40">
+                                <div className="flex justify-between items-start">
+                                    <span className="bg-white/10 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full border border-white/20">
+                                        LIVE SATELITE FEED
+                                    </span>
                                 </div>
-                            </div>
 
-                            {/* Intuitive Controls Grid */}
-                            <div className="grid md:grid-cols-2 gap-8">
-                                {/* Pitch Slider */}
-                                <div className="bg-white p-8 rounded-[3rem] shadow-xl border border-slate-100">
-                                    <div className="flex items-center justify-between mb-8">
-                                        <div className="flex items-center gap-3">
-                                            <Settings2 className="w-5 h-5 text-phoenix-600" />
-                                            <h3 className="font-black text-slate-900 uppercase italic">Roof Pitch</h3>
-                                        </div>
-                                        <span className="text-[10px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full uppercase">Multiplier: {pitch.factor}x</span>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {PITCH_OPTIONS.map((opt) => (
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className="text-white/80 text-sm font-medium">
+                                            {isManualMode ? 'Manual Roof Area' : 'Detected Roof Area'}
+                                        </span>
+                                        {isDetected && !isManualMode && (
                                             <button
-                                                key={opt.label}
-                                                onClick={() => setPitch(opt)}
-                                                className={`p-5 rounded-2xl text-left border-2 transition-all ${pitch.label === opt.label ? 'border-phoenix-500 bg-phoenix-50 shadow-lg shadow-phoenix-100' : 'border-slate-50 hover:border-slate-200 bg-white'}`}
+                                                onClick={() => setIsManualMode(true)}
+                                                className="pointer-events-auto bg-white/10 hover:bg-white/20 text-white text-[10px] px-2 py-0.5 rounded-md border border-white/20 transition backdrop-blur-sm"
                                             >
-                                                <p className="font-black text-xs uppercase tracking-widest text-slate-900">{opt.label}</p>
-                                                <p className="text-[10px] text-slate-400 font-bold mt-1 leading-tight">{opt.desc}</p>
+                                                Adjust
                                             </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Complexity Slider */}
-                                <div className="bg-white p-8 rounded-[3rem] shadow-xl border border-slate-100">
-                                    <div className="flex items-center justify-between mb-8">
-                                        <div className="flex items-center gap-3">
-                                            <Sliders className="w-5 h-5 text-fire-600" />
-                                            <h3 className="font-black text-slate-900 uppercase italic">Complexity</h3>
-                                        </div>
-                                        <span className="text-[10px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full uppercase">Multiplier: {complexity.factor}x</span>
-                                    </div>
-                                    <div className="space-y-3">
-                                        {COMPLEXITY_OPTIONS.map((opt) => (
+                                        )}
+                                        {isManualMode && isDetected && (
                                             <button
-                                                key={opt.label}
-                                                onClick={() => setComplexity(opt)}
-                                                className={`w-full flex items-center justify-between p-5 rounded-2xl border-2 transition-all ${complexity.label === opt.label ? 'border-fire-500 bg-fire-50 shadow-lg shadow-fire-100' : 'border-slate-50 hover:border-slate-200 bg-white'}`}
+                                                onClick={() => {
+                                                    setIsManualMode(false);
+                                                    setRoofArea(detectedAreaSqFt);
+                                                }}
+                                                className="pointer-events-auto bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 text-[10px] px-2 py-0.5 rounded-md border border-blue-500/30 transition backdrop-blur-sm"
                                             >
-                                                <div className="text-left">
-                                                    <p className="font-black text-xs uppercase tracking-widest text-slate-900">{opt.label}</p>
-                                                    <p className="text-[10px] text-slate-400 font-bold leading-tight">{opt.desc}</p>
-                                                </div>
-                                                {complexity.label === opt.label && <ShieldCheck className="w-5 h-5 text-fire-500" />}
+                                                Reset to Detected
                                             </button>
-                                        ))}
+                                        )}
                                     </div>
-                                </div>
-                            </div>
-
-                            {/* Material Selection */}
-                            <div className="bg-white p-10 rounded-[3.5rem] shadow-xl border border-slate-100">
-                                <div className="flex items-center gap-4 mb-10">
-                                    <div className="p-3 bg-slate-50 rounded-2xl">
-                                        <Hammer className="w-8 h-8 text-slate-900" />
+                                    <div className="text-4xl font-black text-white flex items-end gap-2">
+                                        {isMeasuring ? (
+                                            <Loader2 className="w-8 h-8 animate-spin text-phoenix-400" />
+                                        ) : (
+                                            <>
+                                                {roofArea > 0 ? Math.round(roofArea).toLocaleString() : '---'}
+                                                <span className="text-lg font-medium text-white/60 mb-1">sq ft</span>
+                                            </>
+                                        )}
                                     </div>
-                                    <h3 className="text-4xl font-black text-slate-900 italic uppercase tracking-tighter">
-                                        Material Grade
-                                    </h3>
-                                </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                    {MATERIALS.map((mat) => (
-                                        <div
-                                            key={mat.id}
-                                            onClick={() => setSelectedMaterial(mat)}
-                                            className={`relative cursor-pointer rounded-[2.5rem] border-2 overflow-hidden transition-all duration-500 group flex flex-col ${selectedMaterial.id === mat.id
-                                                ? 'border-blue-500 ring-[6px] ring-blue-50 shadow-2xl scale-[1.02]'
-                                                : 'border-slate-100 hover:border-slate-200 shadow-sm'
-                                                }`}
-                                        >
-                                            {/* Image placeholder to match the layout in the image */}
-                                            <div className="h-44 bg-slate-200 relative overflow-hidden shrink-0">
-                                                <img
-                                                    src={mat.image}
-                                                    alt={mat.name}
-                                                    className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110"
-                                                />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent"></div>
-                                                <div className="absolute top-4 left-4 bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20">
-                                                    <p className="text-[9px] font-black text-white uppercase tracking-widest">{mat.name}</p>
-                                                </div>
-                                            </div>
-
-                                            <div className="p-8 flex flex-col flex-1">
-                                                <h4 className="font-black text-lg uppercase italic text-slate-900 mb-3 leading-tight tracking-tighter">
-                                                    {mat.name}
-                                                </h4>
-                                                <p className="text-[12px] font-bold text-slate-500 leading-relaxed mb-auto pb-8 min-h-[60px]">
-                                                    {mat.description}
+                                    {(isManualMode || (roofArea === 0 && !isMeasuring)) && (
+                                        <div className="mt-4 pointer-events-auto bg-black/40 backdrop-blur-md p-4 rounded-2xl border border-white/10">
+                                            {!isDetected && (
+                                                <>
+                                                    <p className="text-red-300 text-xs mb-3 flex items-center gap-2 font-bold uppercase tracking-wider">
+                                                        <InfoIcon className="w-4 h-4" /> {apiError || "Satellite auto-measurement unavailable"}
+                                                    </p>
+                                                    <p className="text-white/60 text-[10px] mb-3 leading-tight">
+                                                        {apiError ? "We couldn't find precise building data for this address. Please enter the area manually." : "Please select your approximate roof area manually to continue with your estimate."}
+                                                    </p>
+                                                </>
+                                            )}
+                                            {isDetected && (
+                                                <p className="text-white/80 text-[10px] mb-3 font-medium">
+                                                    Drag the slider to adjust your roof area measurement:
                                                 </p>
+                                            )}
+                                            <input
+                                                type="range"
+                                                min="1000" max="6000" step="50"
+                                                value={roofArea || 0}
+                                                onChange={(e) => {
+                                                    setRoofArea(Number(e.target.value));
+                                                    setIsManualMode(true);
+                                                }}
+                                                className="w-full accent-phoenix-500 h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer"
+                                            />
+                                            <div className="flex justify-between mt-1 px-0.5">
+                                                <span className="text-[10px] text-white/30 font-bold uppercase tracking-tighter">1,000</span>
+                                                <span className="text-[10px] text-white/30 font-bold uppercase tracking-tighter">6,000</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
 
-                                                <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-400 tracking-widest border-t border-slate-50 pt-6">
-                                                    <span>Rating</span>
-                                                    <span className="text-slate-900 text-sm tracking-tighter">{mat.lifespan}</span>
-                                                </div>
+                        {/* Trust Indicators */}
+                        <div className="bg-blue-50 rounded-2xl p-6 border border-blue-100 flex gap-4 items-start">
+                            <Info className="w-6 h-6 text-phoenix-600 flex-shrink-0 mt-1" />
+                            <div>
+                                <h4 className="font-bold text-phoenix-900">Why this estimate is accurate</h4>
+                                <p className="text-sm text-phoenix-800/80 mt-1 leading-relaxed">
+                                    We use the same satellite data as insurance adjusters to measure your roof's footprint, then apply local code requirements for waste and ice & water shield.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right: Configurator */}
+                    <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 md:p-8 flex flex-col h-full">
+                        <div className="mb-0 flex-1">
+                            <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                                <Settings2 className="w-5 h-5 text-gray-400" />
+                                Configure Your Roof
+                            </h3>
+
+                            {/* Material Selector */}
+                            <div className="mb-8">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 block">Roofing System</label>
+                                <div className="space-y-3">
+                                    {MATERIALS.map((m) => (
+                                        <div
+                                            key={m.id}
+                                            onClick={() => setSelectedMaterial(m)}
+                                            className={`p - 4 rounded - xl border - 2 cursor - pointer transition - all flex items - center gap - 4 ${selectedMaterial.id === m.id
+                                                    ? 'border-phoenix-600 bg-phoenix-50 shadow-md'
+                                                    : 'border-gray-100 hover:border-gray-300'
+                                                } `}
+                                        >
+                                            <div className="w-12 h-12 rounded-lg bg-gray-200 bg-cover bg-center flex-shrink-0" style={{ backgroundImage: `url(${m.image})` }} />
+                                            <div>
+                                                <div className="font-bold text-gray-900">{m.name}</div>
+                                                <div className="text-xs text-gray-500">{m.lifespan} • {m.description}</div>
+                                            </div>
+                                            <div className="ml-auto">
+                                                {selectedMaterial.id === m.id && <div className="w-4 h-4 bg-phoenix-600 rounded-full" />}
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Right Column: Pricing Gauge */}
-                        <div className="lg:w-1/3">
-                            <div className="bg-slate-900 rounded-[4rem] shadow-2xl text-white sticky top-24 border border-white/5 overflow-hidden">
-                                <div className="p-12 flex flex-col items-center">
-
-                                    {/* CIRCULAR PRICING GAUGE */}
-                                    <div className="relative w-64 h-64 mb-12">
-                                        <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                                            <circle
-                                                className="text-slate-800"
-                                                strokeWidth="6"
-                                                stroke="currentColor"
-                                                fill="transparent"
-                                                r="44"
-                                                cx="50"
-                                                cy="50"
-                                            />
-                                            <circle
-                                                className="text-phoenix-500 transition-all duration-1000 ease-out"
-                                                strokeWidth="6"
-                                                strokeDasharray={2 * Math.PI * 44}
-                                                strokeDashoffset={2 * Math.PI * 44 * (1 - percentage / 100)}
-                                                strokeLinecap="round"
-                                                stroke="currentColor"
-                                                fill="transparent"
-                                                r="44"
-                                                cx="50"
-                                                cy="50"
-                                            />
-                                        </svg>
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Estimated Value</p>
-                                            <p className="text-4xl font-black tracking-tighter italic text-white leading-none">
-                                                <span className="text-phoenix-400 text-2xl mr-1">$</span>
-                                                {total.toLocaleString()}
-                                            </p>
-                                            <div className="mt-4 flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full">
-                                                <TrendingUp className="w-3 h-3 text-green-400" />
-                                                <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{roofArea} SQ FT</span>
-                                            </div>
-                                        </div>
+                            {/* Sliders for Pitch & Complexity */}
+                            <div className="grid grid-cols-2 gap-6 mb-8">
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 block flex items-center gap-2">
+                                        <TrendingUp className="w-4 h-4" /> Pitch (Steepness)
+                                    </label>
+                                    <div className="space-y-2">
+                                        {PITCH_OPTIONS.map((p) => (
+                                            <button
+                                                key={p.label}
+                                                onClick={() => setPitch(p)}
+                                                className={`w - full text - left px - 3 py - 2 rounded - lg text - sm font - medium transition ${pitch.label === p.label ? 'bg-slate-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                                    } `}
+                                            >
+                                                {p.label} <span className="opacity-60 text-xs font-normal">- {p.desc}</span>
+                                            </button>
+                                        ))}
                                     </div>
-
-                                    {/* Cost Breakdown Summary */}
-                                    <div className="w-full space-y-6 px-4 mb-12">
-                                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                            <span>Base Local Rate</span>
-                                            <span className="text-slate-200">${selectedMaterial.costPerSqFt}/ft</span>
-                                        </div>
-                                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                            <span>Risk Factor</span>
-                                            <span className="text-slate-200">{complexity.label}</span>
-                                        </div>
-                                        <div className="h-px bg-slate-800"></div>
-                                        <div className="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-start gap-4">
-                                            <div className="p-2 bg-phoenix-500/10 rounded-xl text-phoenix-400">
-                                                <ShieldCheck className="w-5 h-5" />
-                                            </div>
-                                            <div className="text-left">
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-white">616 Operations Review</p>
-                                                <p className="text-[9px] font-bold text-slate-500 leading-tight mt-1">Pricing factors in Grand Rapids material haul-away and MI Ice & Water shield code.</p>
-                                            </div>
-                                        </div>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 block flex items-center gap-2">
+                                        <Sliders className="w-4 h-4" /> Complexity
+                                    </label>
+                                    <div className="space-y-2">
+                                        {COMPLEXITY_OPTIONS.map((c) => (
+                                            <button
+                                                key={c.label}
+                                                onClick={() => setComplexity(c)}
+                                                className={`w - full text - left px - 3 py - 2 rounded - lg text - sm font - medium transition ${complexity.label === c.label ? 'bg-slate-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                                    } `}
+                                            >
+                                                {c.label}
+                                            </button>
+                                        ))}
                                     </div>
-
-                                    {/* Action CTA */}
-                                    <button
-                                        disabled={isSubmitting}
-                                        onClick={handleFinalize}
-                                        className="w-full bg-white hover:bg-phoenix-50 text-slate-900 font-black py-6 rounded-3xl transition-all shadow-2xl flex items-center justify-center gap-3 uppercase text-xs tracking-[0.2em] group disabled:opacity-50"
-                                    >
-                                        {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Lock In & Schedule"}
-                                        {!isSubmitting && <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
-                                    </button>
-                                    <p className="mt-6 text-[9px] text-slate-500 font-black uppercase tracking-[0.3em] italic text-center">Estimate sent instantly to our operations team.</p>
                                 </div>
                             </div>
                         </div>
+
+                        {/* Total & Action */}
+                        <div className="border-t pt-6 bg-slate-50 -mx-8 -mb-8 p-8 rounded-b-3xl">
+                            <div className="flex justify-between items-end mb-4">
+                                <div>
+                                    <p className="text-gray-500 text-sm font-medium mb-1">Estimated Project Total</p>
+                                    <p className="text-xs text-gray-400">Includes materials, labor & waste</p>
+                                </div>
+                                <div className="text-4xl font-extrabold text-slate-900">
+                                    ${calculateEstimate().toLocaleString()}
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={handleSaveQuote}
+                                disabled={isSubmitting || roofArea === 0}
+                                className="w-full py-4 bg-phoenix-600 hover:bg-phoenix-700 text-white font-bold rounded-xl shadow-lg shadow-phoenix-500/30 transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                                {isSubmitting ? <Loader2 className="animate-spin" /> : <Hammer className="w-5 h-5" />}
+                                Save Quote & Schedule Inspection
+                            </button>
+                        </div>
+
                     </div>
                 </div>
             )}

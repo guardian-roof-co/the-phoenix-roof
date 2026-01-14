@@ -33,7 +33,8 @@ export const apiClient = {
     async get(endpoint: string) {
         const response = await fetch(endpoint);
         if (!response.ok) {
-            throw new Error(`API Request failed: ${response.status}`);
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.error || error.message || `API Request failed: ${response.status}`);
         }
         return response.json();
     }

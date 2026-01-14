@@ -23,6 +23,15 @@ const getRoofData = async (lat, lng) => {
 
         const data = await response.json();
 
+        if (!data.solarPotential) {
+            console.warn(`[Solar Service] No solar potential data found for coordinates: ${lat}, ${lng}`);
+            return {
+                areaSqFt: 0,
+                status: 'NOT_FOUND',
+                message: 'No building data available for this location.'
+            };
+        }
+
         // Extract area from solar potential
         // areaMeters2 is the total area of the roof
         const areaM2 = data.solarPotential?.wholeRoofStats?.areaMeters2 || 0;
@@ -30,10 +39,13 @@ const getRoofData = async (lat, lng) => {
         // Convert to Square Feet (1 m2 = 10.7639 sqft)
         const areaSqFt = Math.round(areaM2 * 10.7639);
 
+        console.log(`[Solar Service] Success: ${areaSqFt} sq ft calculated.`);
+
         return {
             areaSqFt,
             solarPotential: data.solarPotential,
-            imageryDate: data.imageryDate
+            imageryDate: data.imageryDate,
+            status: 'SUCCESS'
         };
     } catch (error) {
         console.error('[Solar Service] Fetch Failure:', error);

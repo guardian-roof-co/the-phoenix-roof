@@ -3,10 +3,10 @@ const router = express.Router();
 const { getRoofData } = require('../services/solarService');
 
 /**
- * GET /api/roof-measure?lat=...&lng=...
+ * GET /api/solar-roof?lat=...&lng=...
  * Returns roof area and solar potential
  */
-router.get('/roof-measure', async (req, res) => {
+router.get('/solar-roof', async (req, res) => {
     const { lat, lng } = req.query;
 
     if (!lat || !lng) {

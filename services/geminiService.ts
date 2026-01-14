@@ -1,13 +1,15 @@
 import { apiClient } from './apiClient';
 
 // Analyze an insurance policy document (image or PDF) via Backend Vertex AI
-export const analyzeInsurancePolicy = async (fileBase64: string, mimeType: string): Promise<string> => {
+export const analyzeInsurancePolicy = async (fileBase64: string, mimeType: string, email?: string): Promise<{ analysis: string, fileUrl?: string }> => {
   try {
-    const data = await apiClient.post('/api/analyze-policy', { fileBase64, mimeType });
-    return data.analysis || "Could not analyze the document.";
+    const data = await apiClient.post('/api/analyze-policy', { fileBase64, mimeType, email });
+    return {
+      analysis: data.analysis || "Could not analyze the document.",
+      fileUrl: data.fileUrl
+    };
   } catch (error) {
-    console.error("Policy Analysis Error:", error);
-    throw new Error("Failed to analyze policy. Please try again.");
+    throw error;
   }
 };
 

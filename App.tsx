@@ -29,6 +29,9 @@ function AppContent() {
   const [currentView, setCurrentView] = useState<ViewState>('home');
   const [quoteLocation, setQuoteLocation] = useState<{ address: string, coords?: { lat: number, lng: number } } | null>(null);
   const [schedulerPrefill, setSchedulerPrefill] = useState<string>('');
+  const [schedulerAddress, setSchedulerAddress] = useState<string>('');
+  const [schedulerCost, setSchedulerCost] = useState<number | undefined>(undefined);
+  const [schedulerCustomerData, setSchedulerCustomerData] = useState<{ firstName?: string, lastName?: string, email?: string, phone?: string } | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -62,8 +65,11 @@ function AppContent() {
     handleNavigate('quote');
   };
 
-  const handleScheduleWithNotes = (notes: string) => {
+  const handleScheduleWithNotes = (notes: string, address?: string, cost?: number, customerData?: any) => {
     setSchedulerPrefill(notes);
+    if (address) setSchedulerAddress(address);
+    setSchedulerCost(cost);
+    if (customerData) setSchedulerCustomerData(customerData);
     handleNavigate('schedule');
   };
 
@@ -253,21 +259,21 @@ function AppContent() {
                 </div>
               </div>
             </div>
-            <RoofingServices onSchedule={() => handleNavigate('schedule')} onNavigate={handleNavigate} />
+            <RoofingServices onSchedule={(notes, addr, cost, data) => handleScheduleWithNotes(notes || 'General service request', addr, cost, data)} onNavigate={handleNavigate} />
           </>
         );
       case 'quote':
-        return <QuoteFlow initialLocation={quoteLocation} onSchedule={() => handleNavigate('schedule')} />;
+        return <QuoteFlow initialLocation={quoteLocation} onSchedule={(notes, addr, cost, data) => handleScheduleWithNotes(notes, addr, cost, data)} />;
       case 'insurance':
-        return <InsuranceAnalyzer onSchedule={() => handleNavigate('schedule')} />;
+        return <InsuranceAnalyzer onSchedule={(notes, addr, cost, data) => handleScheduleWithNotes(notes, addr, cost, data)} />;
       case 'maintenance':
-        return <RoofingServices onSchedule={() => handleNavigate('schedule')} onNavigate={handleNavigate} />;
+        return <RoofingServices onSchedule={(notes, addr, cost, data) => handleScheduleWithNotes(notes || 'Maintenance request', addr, cost, data)} onNavigate={handleNavigate} />;
       case 'storm':
-        return <StormReview onSchedule={() => handleNavigate('schedule')} />;
+        return <StormReview onSchedule={(notes, addr, cost, data) => handleScheduleWithNotes(notes || '', addr, cost, data)} />;
       case 'education':
-        return <RoofEducation onSchedule={() => handleNavigate('schedule')} />;
+        return <RoofEducation onSchedule={(notes, addr, cost, data) => handleScheduleWithNotes(notes || '', addr, cost, data)} />;
       case 'schedule':
-        return <Scheduler initialNotes={schedulerPrefill} />;
+        return <Scheduler initialNotes={schedulerPrefill} initialAddress={schedulerAddress} initialCost={schedulerCost} initialCustomerData={schedulerCustomerData} />;
       case 'about':
         return <About />;
       case 'signup':

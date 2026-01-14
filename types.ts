@@ -7,6 +7,8 @@ declare global {
   }
 }
 
+export type OnScheduleHandler = (notes: string, address?: string, cost?: number, customerData?: any) => void;
+
 export type ViewState = 'home' | 'quote' | 'insurance' | 'maintenance' | 'schedule' | 'education' | 'profile' | 'self-inspection' | 'storm' | 'about' | 'signup';
 
 export interface RoofMaterial {
@@ -116,9 +118,12 @@ export interface User {
 
 export interface StormEvent {
   date: string;
-  type: 'Hail' | 'Wind';
-  severity: string; 
-  insurancePotential: boolean; 
+  beginDate?: string;
+  type: string;
+  severity: string;
+  insurancePotential: boolean;
+  distance?: string;
+  location?: string;
 }
 
 export interface StormReport {
