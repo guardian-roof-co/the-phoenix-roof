@@ -135,7 +135,7 @@ export const InsuranceAnalyzer: React.FC<InsuranceAnalyzerProps> = ({ onSchedule
         </div>
         <h2 className="text-4xl font-black text-slate-900 mb-4 italic uppercase">AI Policy Reviewer</h2>
         <p className="text-xl text-slate-600 max-w-2xl mx-auto font-medium">
-          Upload your insurance declaration page. Phoenix AI will scan it for ACV/RCV coverage and hidden roof deductibles instantly.
+          Upload your insurance declaration page. Gemini AI will scan it for ACV/RCV coverage and hidden roof deductibles instantly.
         </p>
       </div>
 
@@ -288,23 +288,22 @@ export const InsuranceAnalyzer: React.FC<InsuranceAnalyzerProps> = ({ onSchedule
                       ))}
                     </div>
 
-                    <p className="text-[11px] text-slate-500 font-medium leading-relaxed italic mb-6">
+                    <p className="text-[11px] text-slate-500 font-medium leading-relaxed italic">
                       Make an informed decision before you trigger a claim on your record. Phoenix can walk the roof, review the situation, and advocate for a fair scope of repairs.
                     </p>
-
-                    <button
-                      onClick={() => onSchedule(
-                        'I have analyzed my insurance policy and would like a second set of experienced eyes to walk the roof before I decide to file a claim.',
-                        '',
-                        undefined,
-                        { firstName: userFirstName, lastName: userLastName, email: userEmail, phone: userPhone }
-                      )}
-                      className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-blue-500 transition-all shadow-xl flex items-center justify-center gap-2 group"
-                    >
-                      Talk to a Project Guide
-                      <ArrowLeft className="w-4 h-4 rotate-180 group-hover:translate-x-1 transition-transform" />
-                    </button>
                   </div>
+
+                  <button
+                    onClick={() => onSchedule(
+                      'I have analyzed my insurance policy and would like a second set of experienced eyes to walk the roof before I decide to file a claim.',
+                      '',
+                      undefined,
+                      { firstName: userFirstName, lastName: userLastName, email: userEmail, phone: userPhone }
+                    )}
+                    className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-blue-500 transition-all shadow-xl"
+                  >
+                    Talk to a Project Guide
+                  </button>
                 </div>
               </div>
             )}

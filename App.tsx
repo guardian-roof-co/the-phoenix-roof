@@ -34,6 +34,7 @@ function AppContent() {
   const [schedulerCustomerData, setSchedulerCustomerData] = useState<{ firstName?: string, lastName?: string, email?: string, phone?: string } | null>(null);
 
   useEffect(() => {
+    // Initial UTM extraction
     const params = new URLSearchParams(window.location.search);
     const source = params.get('utm_source');
     const medium = params.get('utm_medium');
@@ -53,9 +54,37 @@ function AppContent() {
     if (!sessionStorage.getItem('utm_campaign')) sessionStorage.setItem('utm_campaign', 'none');
     if (!sessionStorage.getItem('utm_term')) sessionStorage.setItem('utm_term', '');
     if (!sessionStorage.getItem('utm_content')) sessionStorage.setItem('utm_content', '');
+
+    const validViews: ViewState[] = ['home', 'quote', 'insurance', 'maintenance', 'storm', 'education', 'schedule', 'about', 'signup'];
+
+    const getPathFromURL = () => {
+      const path = window.location.pathname.split('/').filter(Boolean)[0];
+      return validViews.includes(path as ViewState) ? (path as ViewState) : 'home';
+    };
+
+    // 1. Initial Path Sync
+    setCurrentView(getPathFromURL());
+
+    // 2. Browser Back/Forward navigation listener
+    const handlePopState = (event: PopStateEvent) => {
+      const viewFromState = event.state?.view;
+      if (validViews.includes(viewFromState as ViewState)) {
+        setCurrentView(viewFromState as ViewState);
+      } else {
+        setCurrentView(getPathFromURL());
+      }
+      window.scrollTo(0, 0);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   const handleNavigate = (view: ViewState) => {
+    if (view === currentView) return;
+    const path = view === 'home' ? '/' : `/${view}`;
+    // Update URL without hash for a cleaner look
+    window.history.pushState({ view }, '', path);
     setCurrentView(view);
     window.scrollTo(0, 0);
   };
@@ -134,7 +163,7 @@ function AppContent() {
                         </div>
                         <div>
                           <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest">Instant Analysis</p>
-                          <p className="text-white font-black uppercase italic">Gemini 3.0 Vision</p>
+                          <p className="text-white font-black uppercase italic">Phoenix AI</p>
                         </div>
                       </div>
                       <div className="space-y-4">

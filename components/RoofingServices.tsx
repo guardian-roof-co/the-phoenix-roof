@@ -116,14 +116,14 @@ export const RoofingServices: React.FC<RoofingServicesProps> = ({ onSchedule, on
           {SERVICES.map((service) => (
             <div
               key={service.id}
-              className={`flex flex - col p - 8 rounded - [2.5rem] border - 2 transition - all duration - 500 hover: shadow - 2xl hover: -translate - y - 2 group ${service.color} `}
+              className={`flex flex-col p-8 rounded-[2.5rem] border-2 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 group ${service.color}`}
             >
               <div className="mb-6">
-                <div className={`p - 4 rounded - 2xl inline - flex mb - 4 transition - transform group - hover: rotate - 6 ${service.id === 'insurance' ? 'bg-fire-100 text-fire-600' : service.id === 'retail' ? 'bg-phoenix-100 text-phoenix-600' : 'bg-slate-900 text-white'} `}>
+                <div className={`p-4 rounded-2xl inline-flex mb-4 transition-transform group-hover:rotate-6 ${service.id === 'insurance' ? 'bg-fire-100 text-fire-600' : service.id === 'retail' ? 'bg-phoenix-100 text-phoenix-600' : 'bg-slate-900 text-white'}`}>
                   <service.icon className="w-8 h-8" />
                 </div>
                 <h3 className="text-2xl font-black text-slate-900 leading-tight mb-1">{service.title}</h3>
-                <p className={`text - [10px] font - black uppercase tracking - [0.2em] ${service.id === 'insurance' ? 'text-fire-600' : service.id === 'retail' ? 'text-phoenix-600' : 'text-slate-400'} `}>
+                <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${service.id === 'insurance' ? 'text-fire-600' : service.id === 'retail' ? 'text-phoenix-600' : 'text-slate-400'}`}>
                   {service.subtitle}
                 </p>
               </div>
@@ -135,7 +135,7 @@ export const RoofingServices: React.FC<RoofingServicesProps> = ({ onSchedule, on
               <ul className="space-y-4 mb-10 flex-1">
                 {service.features.map((feature, i) => (
                   <li key={i} className="flex items-start gap-3 text-xs font-bold text-slate-700">
-                    <CheckCircle2 className={`w - 4 h - 4 flex - shrink - 0 mt - [-2px] ${service.id === 'insurance' ? 'text-fire-500' : service.id === 'retail' ? 'text-phoenix-500' : 'text-slate-900'} `} />
+                    <CheckCircle2 className={`w-4 h-4 flex-shrink-0 mt-[-2px] ${service.id === 'insurance' ? 'text-fire-500' : service.id === 'retail' ? 'text-phoenix-500' : 'text-slate-900'}`} />
                     {feature}
                   </li>
                 ))}
@@ -147,10 +147,10 @@ export const RoofingServices: React.FC<RoofingServicesProps> = ({ onSchedule, on
                   else if (service.id === 'retail' && onNavigate) onNavigate('quote');
                   else onSchedule('General service inquiry');
                 }}
-                className={`w - full py - 5 rounded - 2xl font - black text - xs uppercase tracking - [0.2em] transition - all flex items - center justify - center gap - 2 shadow - lg active: scale - 95 ${service.id === 'insurance' ? 'bg-fire-600 hover:bg-fire-700 text-white shadow-fire-200' :
+                className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 ${service.id === 'insurance' ? 'bg-fire-600 hover:bg-fire-700 text-white shadow-fire-200' :
                   service.id === 'retail' ? 'bg-phoenix-600 hover:bg-phoenix-700 text-white shadow-phoenix-200' :
                     'bg-slate-900 hover:bg-slate-800 text-white'
-                  } `}
+                  }`}
               >
                 {service.cta} <ArrowRight className="w-4 h-4" />
               </button>

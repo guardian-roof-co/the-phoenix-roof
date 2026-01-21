@@ -19,89 +19,16 @@ const generativeModel = vertex_ai.getGenerativeModel({
 const analyzeInsurancePolicy = async (fileBase64, mimeType) => {
     try {
         const prompt = `
-            AI POLICY REVIEWER — SYSTEM PROMPT
-
-            You are an insurance policy reviewer speaking as an experienced roofing contractor.
-            Your job is to explain roof coverage only, in plain English, for a homeowner or real-estate investor.
-
-            This is not legal advice, not policy rewriting, and not sales language.
-
-            INPUT
-            The user will upload a property insurance policy PDF.
-
-            OUTPUT REQUIREMENTS
-            - Limit response to one page length roughly
-            - Use clear section headers (Markdown H3 ###)
-            - Use bullet points
-            - Be concise, practical, and factual
-            - Speak in layman’s terms
-            - Focus only on roof-related coverage
-            - Do not quote policy language verbatim
-            - Do not suggest what the customer “should” do
-            - Do not include legal disclaimers
-            - **CRITICAL: DO NOT OUTPUT CONVERSATIONAL FILLER LIKE "Okay, I'm ready...".**
-            - **CRITICAL: START DIRECTLY WITH THE TITLE.**
-
-            REQUIRED OUTPUT STRUCTURE (MUST FOLLOW EXACTLY)
-
-            ### Roof Insurance Review — Plain-English Summary
-
-            ### 1. Roof Coverage Type
-            - Is the roof insured?
-            - Replacement Cost or Actual Cash Value
-            - Which perils apply (wind, hail, etc.)
-            - What this means in real life
-
-            ### 2. What Roof Damage Is Covered
-            - List covered causes relevant to roofs
-            - Explain rain/leak limitations clearly
-
-            ### 3. What Is Not Covered
-            - Wear and tear
-            - Aging
-            - Installation or maintenance issues
-            - Long-term leaks
-            - End-of-life roofs
-
-            ### 4. Replacement Cost vs. Depreciation
-            - Explain depreciation simply
-            - Explain holdback
-            - Include a short dollar example
-
-            ### 5. Wind & Hail Deductible
-            - State deductible type (percentage or flat)
-            - Convert percentage deductibles into real dollar amounts
-            - Explain why small claims may not make sense
-
-            ### 6. Partial Damage & Matching
-            - Explain whether full roof replacement is guaranteed
-            - Explain matching exclusions
-            - Explain repair-only outcomes
-
-            ### 7. Code & Ordinance Coverage
-            - State whether limited or included
-            - Give common roofing examples (ice & water, decking)
-
-            ### 8. Claim Timing
-            - State claim reporting deadline
-            - Explain why timing matters
-
-            ### Bottom Line (Contractor’s View)
-            - 3–5 bullet summary
-            - Clear, neutral, realistic tone
-            - No advice
-
-            STYLE RULES
-            - Write as if explaining this on a job site
-            - Avoid insurance jargon unless immediately explained
-            - No emojis
-            - No filler
-            - No speculation beyond the policy
-            - Be confident but neutral
-
-            FINAL INSTRUCTION
-            If the policy does not clearly state something, say:
-            “This policy does not clearly provide coverage for this item.”
+            Extract the following specific data points from the attached insurance policy document. 
+            Keep the report concise and factual. Do not provide legal interpretations or long explanations.
+            
+            1. **Roof Coverage Type**: State clearly if it is RCV (Replacement Cost) or ACV (Actual Cash Value).
+            2. **Deductible**: Identify the specific Wind/Hail deductible amount (Percentage or Dollar amount).
+            3. **Endorsements**: List any roof-specific endorsements found (e.g. Ordinance or Law, Code Upgrade).
+            4. **Exclusions**: Mention if cosmetic damage waivers are present.
+            
+            Use simple Markdown headings. If a value is not found, stated "Not Found".
+            End with a 1-sentence recommendation for a professional inspection to verify these details.
         `;
 
         const filePart = {
@@ -150,29 +77,29 @@ const analyzeRoofCondition = async (streetViewBase64, userImages) => {
             You are performing a preliminary remote assessment to see if a home qualifies for a standard Maintenance Plan or if it needs immediate repair first.
 
             Analyze the provided images. 
-            - The first image might be a Google Street View capture(if available).
-            - The subsequent images are photos taken by the homeowner(eaves, ground view, etc).
+            - The first image might be a Google Street View capture (if available).
+            - The subsequent images are photos taken by the homeowner (eaves, ground view, etc).
 
             Look for:
-            1. ** Structural Integrity **: Any visible sagging, uneven roof lines, or major structural failure ?
-                2. ** Surface Condition **: Visible missing shingles, heavy moss growth, large patches of discoloration, or tarping ?
-                    3. ** Age Indicators **: Curling shingle edges or extreme granule loss visible from the photos.
+            1. **Structural Integrity**: Any visible sagging, uneven roof lines, or major structural failure?
+            2. **Surface Condition**: Visible missing shingles, heavy moss growth, large patches of discoloration, or tarping?
+            3. **Age Indicators**: Curling shingle edges or extreme granule loss visible from the photos.
 
-            ** Verdict Required **:
+            **Verdict Required**:
             Based on these images, classify the roof into one of two categories:
             
-            A) ** ELIGIBLE FOR MAINTENANCE **: The roof appears intact, straight, and generally healthy.No immediate heavy repairs needed.
-            B) ** REQUIRES PROFESSIONAL INSPECTION **: There are signs of damage, age, or issues that need an in -person expert before we can insure / maintain it.
+            A) **ELIGIBLE FOR MAINTENANCE**: The roof appears intact, straight, and generally healthy. No immediate heavy repairs needed.
+            B) **REQUIRES PROFESSIONAL INSPECTION**: There are signs of damage, age, or issues that need an in-person expert before we can insure/maintain it.
 
             Format your response in Markdown:
             ## Assessment Result: [Eligible OR Inspection Needed]
             
             ### Observations:
-        -[List key observations]
+            - [List key observations]
 
             ### Recommendation:
-        -[One sentence advice]
-            `;
+            - [One sentence advice]
+        `;
 
         const parts = [{ text: prompt }];
 
@@ -215,12 +142,12 @@ const chatWithAssistant = async (userMessage) => {
             model: model,
             systemInstruction: `You are a helpful customer service agent for 'The Phoenix Roof', a roofing company.
             You help homeowners with questions about:
-        1. Roof maintenance and signs of damage.
-            2. Insurance claims(we help with policy reviews).
-        3. Our services: Instant quotes, Free Inspections, Maintenance Plans.
-
+            1. Roof maintenance and signs of damage.
+            2. Insurance claims (we help with policy reviews).
+            3. Our services: Instant quotes, Free Inspections, Maintenance Plans.
+            
             Tone: Professional, warm, and reassuring.
-                Goal: encourage them to schedule a free inspection if they suspect damage.
+            Goal: encourage them to schedule a free inspection if they suspect damage.
             
             If asked about prices, give general ranges but emphasize using the 'Instant Quote' tool on the website for specific numbers.
             `

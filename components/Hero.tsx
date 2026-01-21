@@ -8,7 +8,7 @@ declare global {
 }
 
 interface HeroProps {
-  onGetQuote: (address: string, coords: {lat: number, lng: number}) => void;
+  onGetQuote: (address: string, coords: { lat: number, lng: number }) => void;
   onSchedule: () => void;
   onAnalyze: () => void;
 }
@@ -17,7 +17,7 @@ export const Hero: React.FC<HeroProps> = ({ onGetQuote, onSchedule, onAnalyze })
   const [activeTab, setActiveTab] = useState<'quote' | 'inspect' | 'insurance'>('quote');
   const [inputValue, setInputValue] = useState('');
   const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
-  
+
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
 
@@ -26,35 +26,35 @@ export const Hero: React.FC<HeroProps> = ({ onGetQuote, onSchedule, onAnalyze })
       setIsGoogleLoaded(true);
       if (inputRef.current && !autocompleteRef.current) {
         try {
-            const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
-              types: ['address'],
-              componentRestrictions: { country: 'us' },
-              fields: ['formatted_address', 'geometry']
-            });
+          const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
+            types: ['address'],
+            componentRestrictions: { country: 'us' },
+            fields: ['formatted_address', 'geometry']
+          });
 
-            autocomplete.addListener('place_changed', () => {
-              const place = autocomplete.getPlace();
-              if (place.geometry && place.geometry.location) {
-                  const address = place.formatted_address;
-                  const lat = place.geometry.location.lat();
-                  const lng = place.geometry.location.lng();
-                  setInputValue(address);
-                  onGetQuote(address, { lat, lng });
-              }
-            });
+          autocomplete.addListener('place_changed', () => {
+            const place = autocomplete.getPlace();
+            if (place.geometry && place.geometry.location) {
+              const address = place.formatted_address;
+              const lat = place.geometry.location.lat();
+              const lng = place.geometry.location.lng();
+              setInputValue(address);
+              onGetQuote(address, { lat, lng });
+            }
+          });
 
-            autocompleteRef.current = autocomplete;
+          autocompleteRef.current = autocomplete;
         } catch (e) {
-            console.error("Hero Autocomplete Error", e);
+          console.error("Hero Autocomplete Error", e);
         }
       }
     }
   }, [onGetQuote]);
 
   const handleManualSubmit = () => {
-      if (inputValue.trim().length > 3) {
-          onGetQuote(inputValue, { lat: 0, lng: 0 });
-      }
+    if (inputValue.trim().length > 3) {
+      onGetQuote(inputValue, { lat: 0, lng: 0 });
+    }
   };
 
   return (
@@ -131,7 +131,7 @@ export const Hero: React.FC<HeroProps> = ({ onGetQuote, onSchedule, onAnalyze })
 
               {activeTab === 'insurance' && (
                 <div className="text-center py-4">
-                  <p className="text-slate-600 mb-6 text-sm font-medium leading-relaxed px-4">Upload your policy for an instant AI gap analysis by our <span className="text-blue-600 font-black italic">Gemini 3.0 Vision</span> engine.</p>
+                  <p className="text-slate-600 mb-6 text-sm font-medium leading-relaxed px-4">Upload your policy for an instant AI gap analysis by our <span className="text-blue-600 font-black italic">Phoenix AI Engine</span>.</p>
                   <button onClick={onAnalyze} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl transition-all shadow-lg uppercase tracking-widest">Analyze Policy</button>
                 </div>
               )}

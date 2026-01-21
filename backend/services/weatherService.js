@@ -15,7 +15,7 @@ const getStormHistory = async (lat, lng, radiusMiles = 10) => {
                 (3959 * acos(cos(radians($1)) * cos(radians(begin_lat)) * cos(radians(begin_lon) - radians($2)) + sin(radians($1)) * sin(radians(begin_lat)))) AS distance
             FROM storm_events
             WHERE (3959 * acos(cos(radians($1)) * cos(radians(begin_lat)) * cos(radians(begin_lon) - radians($2)) + sin(radians($1)) * sin(radians(begin_lat)))) < $3
-            AND year >= 2025
+            AND year >= EXTRACT(YEAR FROM CURRENT_DATE) - 1
             ORDER BY 
                 year DESC, 
                 CASE UPPER(month_name) 

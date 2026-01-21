@@ -14,9 +14,9 @@ interface QuoteFlowProps {
 // Localized Grand Rapids, Michigan Pricing Logic
 // Factors in local labor rates and MI code requirements (Ice & Water shield, etc.)
 const MATERIALS: RoofMaterial[] = [
-    { id: 'asphalt-shingle', name: 'Architectural Shingle', description: 'Owens Corning Duration - 616 Standard.', costPerSqFt: 6.25, lifespan: '25-30 Years', image: '/images/roofing/asphalt-shingle.png' },
-    { id: 'metal-seam', name: 'Standing Seam Metal', description: 'Lifetime Snow Shedding & Durability.', costPerSqFt: 14.75, lifespan: '50+ Years', image: '/images/roofing/metal-seam.png' },
-    { id: 'synthetic-slate', name: 'EuroShield / Synthetic', description: 'Class 4 Hail Rating - Premium Look.', costPerSqFt: 19.95, lifespan: '50+ Years', image: '/images/roofing/synthetic-slate.png' }
+    { id: 'asphalt-shingle', name: 'Architectural Shingle', description: 'Owens Corning Duration - 616 Standard.', costPerSqFt: 6.25, lifespan: '25-30 Years', image: '/images/roofing/asphalt-shingle.jpg' },
+    { id: 'metal-seam', name: 'Standing Seam Metal', description: 'Lifetime Snow Shedding & Durability.', costPerSqFt: 14.75, lifespan: '50+ Years', image: '/images/roofing/metal-seam.jpg' },
+    { id: 'synthetic-slate', name: 'EuroShield / Synthetic', description: 'Class 4 Hail Rating - Premium Look.', costPerSqFt: 19.95, lifespan: '50+ Years', image: '/images/roofing/synthetic-slate.jpg' }
 ];
 
 const PITCH_OPTIONS = [
@@ -87,7 +87,7 @@ export const QuoteFlow: React.FC<QuoteFlowProps> = ({ initialLocation, onSchedul
                 setApiError(null);
                 try {
                     // Call backend which securely calls Google Solar API
-                    const data = await apiClient.get(`/ api / solar - roof ? lat = ${coordinates.lat}& lng=${coordinates.lng} `);
+                    const data = await apiClient.get(`/api/solar-roof?lat=${coordinates.lat}&lng=${coordinates.lng}`);
 
                     if (data && data.status === 'SUCCESS' && data.areaSqFt > 0) {
                         setRoofArea(data.areaSqFt);
@@ -304,10 +304,10 @@ export const QuoteFlow: React.FC<QuoteFlowProps> = ({ initialLocation, onSchedul
                                         <div
                                             key={m.id}
                                             onClick={() => setSelectedMaterial(m)}
-                                            className={`p - 4 rounded - xl border - 2 cursor - pointer transition - all flex items - center gap - 4 ${selectedMaterial.id === m.id
-                                                    ? 'border-phoenix-600 bg-phoenix-50 shadow-md'
-                                                    : 'border-gray-100 hover:border-gray-300'
-                                                } `}
+                                            className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMaterial.id === m.id
+                                                ? 'border-phoenix-600 bg-phoenix-50 shadow-md'
+                                                : 'border-gray-100 hover:border-gray-300'
+                                                }`}
                                         >
                                             <div className="w-12 h-12 rounded-lg bg-gray-200 bg-cover bg-center flex-shrink-0" style={{ backgroundImage: `url(${m.image})` }} />
                                             <div>
@@ -333,8 +333,8 @@ export const QuoteFlow: React.FC<QuoteFlowProps> = ({ initialLocation, onSchedul
                                             <button
                                                 key={p.label}
                                                 onClick={() => setPitch(p)}
-                                                className={`w - full text - left px - 3 py - 2 rounded - lg text - sm font - medium transition ${pitch.label === p.label ? 'bg-slate-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                                    } `}
+                                                className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition ${pitch.label === p.label ? 'bg-slate-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                                    }`}
                                             >
                                                 {p.label} <span className="opacity-60 text-xs font-normal">- {p.desc}</span>
                                             </button>
@@ -350,8 +350,8 @@ export const QuoteFlow: React.FC<QuoteFlowProps> = ({ initialLocation, onSchedul
                                             <button
                                                 key={c.label}
                                                 onClick={() => setComplexity(c)}
-                                                className={`w - full text - left px - 3 py - 2 rounded - lg text - sm font - medium transition ${complexity.label === c.label ? 'bg-slate-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                                    } `}
+                                                className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition ${complexity.label === c.label ? 'bg-slate-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                                    }`}
                                             >
                                                 {c.label}
                                             </button>

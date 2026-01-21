@@ -23,8 +23,13 @@ export const apiClient = {
         });
 
         if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw new Error(error.message || `API Request failed: ${response.status}`);
+            const errorBody = await response.json().catch(() => ({}));
+            // Prioritize specific error properties, then fall back to a generic message
+            const errorMessage = errorBody.error || errorBody.message || `API Request failed: ${response.status}`;
+            // Re-throw the error with more context, potentially including the full errorBody
+            const error = new Error(errorMessage);
+            Object.assign(error, { status: response.status, ...errorBody });
+            throw error;
         }
 
         return response.json();
@@ -33,8 +38,13 @@ export const apiClient = {
     async get(endpoint: string) {
         const response = await fetch(endpoint);
         if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw new Error(error.error || error.message || `API Request failed: ${response.status}`);
+            const errorBody = await response.json().catch(() => ({}));
+            // Prioritize specific error properties, then fall back to a generic message
+            const errorMessage = errorBody.error || errorBody.message || `API Request failed: ${response.status}`;
+            // Re-throw the error with more context, potentially including the full errorBody
+            const error = new Error(errorMessage);
+            Object.assign(error, { status: response.status, ...errorBody });
+            throw error;
         }
         return response.json();
     }

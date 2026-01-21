@@ -21,8 +21,9 @@ export const analyzeRoofCondition = async (
   try {
     const data = await apiClient.post('/api/analyze-roof', { streetViewBase64, userImages });
     return data.analysis || "Analysis failed.";
-  } catch (error) {
+  } catch (error: any) {
     console.error("Roof Analysis Error:", error);
-    throw new Error("Failed to analyze roof condition.");
+    // Propagate the actual error message if available
+    throw new Error(error.message || "Failed to analyze roof condition.");
   }
 };

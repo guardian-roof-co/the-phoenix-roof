@@ -8,7 +8,7 @@ const keyPath = path.join(__dirname, '../../gcs-key.json');
 
 // Initialize Storage: Use local key if exists, otherwise fall back to Application Default Credentials (ADC)
 const storageOptions = {
-    projectId: 'guardian-478113'
+    projectId: process.env.GOOGLE_CLOUD_PROJECT || 'guardian-478113'
 };
 
 if (fs.existsSync(keyPath)) {
@@ -19,6 +19,32 @@ if (fs.existsSync(keyPath)) {
 }
 
 const storage = new Storage(storageOptions);
+
+// Add initialization check to debug identity
+async function debugIdentity() {
+    try {
+        const [serviceAccount] = await storage.getServiceAccount();
+        if (serviceAccount && serviceAccount.email) {
+            console.log(`[Storage] Active Service Account: ${serviceAccount.email}`);
+        } else {
+            console.log('[Storage] Service Account email not found via SDK. Checking Metadata Server...');
+            // In Cloud Run, we can fetch the email from the metadata server
+            const response = await fetch('http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email', {
+                headers: { 'Metadata-Flavor': 'Google' }
+            });
+            if (response.ok) {
+                const email = await response.text();
+                console.log(`[Storage] Metadata Server Identity: ${email}`);
+            } else {
+                console.warn('[Storage] Could not reach Metadata Server.');
+            }
+        }
+    } catch (err) {
+        console.warn('[Storage] Identity Check Error:', err.message);
+    }
+}
+
+debugIdentity();
 
 const BUCKET_NAME = 'west-michigan-roof';
 

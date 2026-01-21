@@ -12,25 +12,25 @@ const PROBLEMS = [
     title: "Missing Shingles",
     desc: "Strong winds can tear shingles off completely. This exposes the underlayment and deck to moisture.",
     severity: "High",
-    img: "https://picsum.photos/id/164/400/300"
+    img: "/images/roofing/roof-shingles.jpg"
   },
   {
     title: "Granule Loss",
     desc: "If your shingles look bald or you find sand-like granules in gutters, your roof is aging and losing UV protection.",
     severity: "Medium",
-    img: "https://picsum.photos/id/204/400/300"
+    img: "/images/roofing/roof-sand.jpg"
   },
   {
     title: "Moss & Algae",
     desc: "Green patches can trap moisture against the roof surface, potentially causing rot in wood fibers over time.",
     severity: "Low/Medium",
-    img: "https://picsum.photos/id/326/400/300"
+    img: "/images/roofing/Roof-moss-algae.jpg"
   },
   {
     title: "Damaged Flashing",
     desc: "Metal strips around chimneys and vents prevent leaks. If bent or rusted, water can easily enter.",
     severity: "High",
-    img: "https://picsum.photos/id/193/400/300"
+    img: "/images/roofing/roof-chimney.jpg"
   }
 ];
 

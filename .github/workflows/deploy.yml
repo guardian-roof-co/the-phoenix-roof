@@ -1,0 +1,53 @@
+name: Build and Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
+
+env:
+  PROJECT_ID: guardian-478113
+  # These can be overridden by Environment Variables in GitHub if different per env
+  SERVICE: ${{ vars.GCP_SERVICE_NAME || 'the-phoenix-roof' }}
+  REGION: ${{ vars.GCP_REGION || 'us-central1' }}
+
+jobs:
+  deploy:
+    name: Deploy to ${{ github.event.inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Google Auth
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          token_format: 'access_token'
+          workload_identity_provider: '${{ secrets.WIF_PROVIDER }}'
+          service_account: '${{ secrets.WIF_SERVICE_ACCOUNT }}'
+
+      - name: Deploy to Cloud Run
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE }}
+          region: ${{ env.REGION }}
+          source: ./
+          flags: '--allow-unauthenticated'
+
+      - name: Show Output
+        run: echo "Deployed to ${{ github.event.inputs.environment }} at ${{ steps.deploy.outputs.url }}"
