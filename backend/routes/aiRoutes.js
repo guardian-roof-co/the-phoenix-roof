@@ -70,14 +70,14 @@ router.post('/analyze-roof', async (req, res) => {
  * Body: { message }
  */
 router.post('/chat', async (req, res) => {
-    const { message } = req.body;
+    const { message, history } = req.body;
 
     if (!message) {
         return res.status(400).json({ error: 'Missing message' });
     }
 
     try {
-        const result = await chatWithAssistant(message);
+        const result = await chatWithAssistant(message, history || []);
         res.json({ text: result });
     } catch (error) {
         console.error('[AI Route Chat] Error:', error);

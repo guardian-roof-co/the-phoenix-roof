@@ -22,25 +22,38 @@ const storage = new Storage(storageOptions);
 
 // Add initialization check to debug identity
 async function debugIdentity() {
+    // Only attempt metadata check if we're likely in a GCP environment
+    const isLocal = process.env.NODE_ENV === 'development' || !process.env.K_SERVICE;
+
     try {
         const [serviceAccount] = await storage.getServiceAccount();
         if (serviceAccount && serviceAccount.email) {
             console.log(`[Storage] Active Service Account: ${serviceAccount.email}`);
-        } else {
-            console.log('[Storage] Service Account email not found via SDK. Checking Metadata Server...');
-            // In Cloud Run, we can fetch the email from the metadata server
+            return;
+        }
+    } catch (err) {
+        // Fallback to metadata check only if NOT local
+        if (isLocal) {
+            console.log('[Storage] Local mode: ADC/Key based auth verified.');
+            return;
+        }
+    }
+
+    // Secondary Check: Metadata Server (Production/GCP Only)
+    if (!isLocal) {
+        try {
+            console.log('[Storage] Checking Metadata Server for identity...');
             const response = await fetch('http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email', {
-                headers: { 'Metadata-Flavor': 'Google' }
+                headers: { 'Metadata-Flavor': 'Google' },
+                signal: AbortSignal.timeout(1000) // Don't hang
             });
             if (response.ok) {
                 const email = await response.text();
                 console.log(`[Storage] Metadata Server Identity: ${email}`);
-            } else {
-                console.warn('[Storage] Could not reach Metadata Server.');
             }
+        } catch (mErr) {
+            // Ignore fetch failures on metadata server (usually means we're not on GCP)
         }
-    } catch (err) {
-        console.warn('[Storage] Identity Check Error:', err.message);
     }
 }
 

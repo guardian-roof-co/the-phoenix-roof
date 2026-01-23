@@ -209,28 +209,59 @@ const analyzeRoofCondition = async (streetViewBase64, userImages) => {
     }
 };
 
-const chatWithAssistant = async (userMessage) => {
+const chatWithAssistant = async (userMessage, history = []) => {
     try {
         const generativeModel = vertex_ai.getGenerativeModel({
             model: model,
             systemInstruction: `You are a helpful customer service agent for 'The Phoenix Roof', a roofing company.
             You help homeowners with questions about:
-        1. Roof maintenance and signs of damage.
-            2. Insurance claims(we help with policy reviews).
-        3. Our services: Instant quotes, Free Inspections, Maintenance Plans.
+            1. Roof maintenance and signs of damage.
+            2. Insurance claims (we help with policy reviews).
+            3. Our services: Instant quotes, Free Inspections, Maintenance Plans.
 
             Tone: Professional, warm, and reassuring.
-                Goal: encourage them to schedule a free inspection if they suspect damage.
+            Goal: Encourage them to use our site tools or schedule a free inspection if they suspect damage.
+
+            CRITICAL: If the user seems ready to take action, you MUST suggest a specific tool using the following syntax:
+            ACTION_BUTTON: [Label Text](ViewName)
             
-            If asked about prices, give general ranges but emphasize using the 'Instant Quote' tool on the website for specific numbers.
+            Valid ViewNames:
+            - quote (for price/estimate)
+            - schedule (for booking inspections)
+            - insurance (for policy review)
+            - storm (for storm history tracker)
+
+            GENERAL NAVIGATION:
+            - If the user asks for "menu", "options", "main menu", or seems lost:
+              Response: "How can I help you today? Here are our main tools:"
+              Include ACTION_BUTTONs for: [Get a Quote](quote), [Check Storms](storm), [Policy Review](insurance), [Schedule Inspection](schedule)
+
+            STORM CHECK SPECIAL CASE:
+            If a user asks to "check my storm history" or "check for hail/wind events":
+            1. Response: Ask for their 5-digit Zip Code. 
+            2. If they provide a zip code:
+               Response: "Checking history for Zip Code [Zip]... ACTION_STORM_CHECK: [Zip]"
+
+            Examples:
+            - "I can scan for recent hail damage. What is your 5-digit Zip Code?"
+            - "I'm scanning historical data for 49503... ACTION_STORM_CHECK: [49503]"
+            - User: "Menu"
+              AI: "I'm here to help. What would you like to do? ACTION_BUTTON: [Get a Quote](quote) ACTION_BUTTON: [Check Storms](storm) ACTION_BUTTON: [Policy Review](insurance)"
+
+            If asked about prices, give general ranges but ALWAYS suggest the 'Instant Quote' tool.
             `
         });
 
-        const request = {
-            contents: [{ role: 'user', parts: [{ text: userMessage }] }],
-        };
+        // Format history for Gemini (alternating user/model)
+        const contents = history.map(msg => ({
+            role: msg.role === 'user' ? 'user' : 'model',
+            parts: [{ text: msg.text }]
+        }));
 
-        const streamingResp = await generativeModel.generateContentStream(request);
+        // Add the current user message
+        contents.push({ role: 'user', parts: [{ text: userMessage }] });
+
+        const streamingResp = await generativeModel.generateContentStream({ contents });
         const response = await streamingResp.response;
         const fullText = response.candidates[0].content.parts[0].text;
 
