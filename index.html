@@ -63,6 +63,12 @@
       background: #0284c7;
     }
 
+    /* Standard text selection */
+    ::selection {
+      background: #0ea5e9;
+      color: white;
+    }
+
     /* Fix for Chrome Autofill on Dark Inputs */
     .dark-autofill:-webkit-autofill,
     .dark-autofill:-webkit-autofill:hover,
@@ -71,6 +77,15 @@
       -webkit-text-fill-color: white !important;
       -webkit-box-shadow: 0 0 0 30px #1e293b inset !important;
       transition: background-color 5000s ease-in-out 0s;
+    }
+    /* Beacon Animation */
+    @keyframes beacon {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+    .beacon-red {
+      animation: beacon 1s infinite;
+      box-shadow: 0 0 15px #dc2626;
     }
   </style>
 

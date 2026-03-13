@@ -96,6 +96,21 @@ const initDB = async () => {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
             CREATE INDEX IF NOT EXISTS idx_storm_coords ON storm_events(begin_lat, begin_lon);
+
+            -- Table for Custom Storm Landing Pages
+            CREATE TABLE IF NOT EXISTS storm_landing_pages (
+                id SERIAL PRIMARY KEY,
+                slug VARCHAR(255) UNIQUE NOT NULL,
+                city VARCHAR(255) NOT NULL,
+                date VARCHAR(255) NOT NULL,
+                hail_size VARCHAR(50) NOT NULL,
+                description TEXT NOT NULL,
+                radar_image TEXT,
+                video_embed TEXT,
+                affected_areas TEXT[],
+                storm_photos TEXT[],
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
         `);
         console.log("Database tables verified.");
     } catch (err) {

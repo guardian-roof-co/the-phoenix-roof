@@ -11,6 +11,7 @@ const webhookRoutes = require('./backend/routes/webhookRoutes');
 const solarRoutes = require('./backend/routes/solarRoutes');
 const weatherRoutes = require('./backend/routes/weatherRoutes');
 const aiRoutes = require('./backend/routes/aiRoutes');
+const stormPageRoutes = require('./backend/routes/stormPageRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -34,6 +35,7 @@ app.use('/api', webhookRoutes);
 app.use('/api', solarRoutes);
 app.use('/api', weatherRoutes);
 app.use('/api', aiRoutes);
+app.use('/api', stormPageRoutes);
 
 // Catch-all route to serve the frontend (for SPA routing)
 app.get('*', (req, res) => {

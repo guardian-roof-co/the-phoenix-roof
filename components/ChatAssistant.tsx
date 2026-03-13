@@ -117,23 +117,67 @@ export const ChatAssistant: React.FC<ChatAssistantProps> = ({ onNavigate }) => {
     setMessages(newMessages);
     setIsLoading(true);
 
+    // 1. Local Interceptors (No AI call)
+    if (userMessage.toLowerCase() === 'main menu' || userMessage.toLowerCase() === 'menu') {
+      setTimeout(() => {
+        setMessages(prev => [...prev, {
+          role: 'model',
+          text: "How can I help you today? Here are our main tools:\n\nACTION_BUTTON: [Get a Quote](quote)\nACTION_BUTTON: [Check Storms](storm)\nACTION_BUTTON: [Policy Review](insurance)\nACTION_BUTTON: [Schedule Inspection](schedule)"
+        }]);
+        setIsLoading(false);
+      }, 300);
+      return;
+    }
+
+    if (userMessage.toLowerCase() === 'check my storm history') {
+      setTimeout(() => {
+        setMessages(prev => [...prev, {
+          role: 'model',
+          text: "I can scan for recent hail or wind damage in your area. Please provide your 5-digit Zip Code to begin."
+        }]);
+        setIsLoading(false);
+      }, 300);
+      return;
+    }
+
+    // 2. AI Call with Streaming
     try {
-      const data = await apiClient.post('/api/chat', {
+      // Add a placeholder message for "Thinking..."
+      const botMessageIndex = newMessages.length;
+      setMessages(prev => [...prev, { role: 'model', text: "Thinking..." }]);
+
+      let fullResponse = '';
+      let isFirstChunk = true;
+
+      for await (const chunk of apiClient.stream('/api/chat', {
         message: userMessage,
         history: messages.slice(1)
-      });
+      })) {
+        if (chunk.text) {
+          if (isFirstChunk) {
+            fullResponse = chunk.text;
+            isFirstChunk = false;
+          } else {
+            fullResponse += chunk.text;
+          }
 
-      const botResponse = data.text || "I'm having trouble connecting right now. Please try again.";
-      setMessages(prev => [...prev, { role: 'model', text: botResponse }]);
+          // Update the specific message with the incremental text
+          setMessages(prev => {
+            const updated = [...prev];
+            updated[botMessageIndex] = { role: 'model', text: fullResponse };
+            return updated;
+          });
+        }
+      }
 
-      // Robust regex to handle [Zip] or [[Zip]] or just Zip
-      const stormMatch = botResponse.match(/ACTION_STORM_CHECK:\s*\[?\[?(\d{5})\]?\]?/);
+      // 3. Post-stream checks (like Storm Check trigger)
+      const stormMatch = fullResponse.match(/ACTION_STORM_CHECK:\s*\[?\[?(\d{5})\]?\]?/);
       if (stormMatch && stormMatch[1]) {
         await handleStormCheck(stormMatch[1]);
       }
     } catch (error) {
       console.error("Chat Error:", error);
-      setMessages(prev => [...prev, { role: 'model', text: "Sorry, I encountered an error. Please try scheduling an inspection directly." }]);
+      setMessages(prev => [...prev.slice(0, -1), { role: 'model', text: "Sorry, I encountered an error. Please try scheduling an inspection directly." }]);
     } finally {
       setIsLoading(false);
     }

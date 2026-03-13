@@ -209,7 +209,7 @@ const analyzeRoofCondition = async (streetViewBase64, userImages) => {
     }
 };
 
-const chatWithAssistant = async (userMessage, history = []) => {
+const chatWithAssistantStream = async (userMessage, history = []) => {
     try {
         const generativeModel = vertex_ai.getGenerativeModel({
             model: model,
@@ -252,22 +252,16 @@ const chatWithAssistant = async (userMessage, history = []) => {
             `
         });
 
-        // Format history for Gemini (alternating user/model)
         const contents = history.map(msg => ({
             role: msg.role === 'user' ? 'user' : 'model',
             parts: [{ text: msg.text }]
         }));
 
-        // Add the current user message
         contents.push({ role: 'user', parts: [{ text: userMessage }] });
 
-        const streamingResp = await generativeModel.generateContentStream({ contents });
-        const response = await streamingResp.response;
-        const fullText = response.candidates[0].content.parts[0].text;
-
-        return fullText || "I'm having trouble connecting right now. Please try again.";
+        return await generativeModel.generateContentStream({ contents });
     } catch (error) {
-        console.error('[AI Service] Chat Error:', error.message || error);
+        console.error('[AI Service] Chat Stream Error:', error.message || error);
         throw new Error(error.message || 'Chat failed.');
     }
 };
@@ -275,5 +269,5 @@ const chatWithAssistant = async (userMessage, history = []) => {
 module.exports = {
     analyzeInsurancePolicy,
     analyzeRoofCondition,
-    chatWithAssistant
+    chatWithAssistantStream
 };

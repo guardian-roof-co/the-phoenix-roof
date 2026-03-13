@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { analyzeInsurancePolicy, analyzeRoofCondition, chatWithAssistant } = require('../services/aiService');
+const { analyzeInsurancePolicy, analyzeRoofCondition, chatWithAssistantStream } = require('../services/aiService');
 const { uploadFile } = require('../services/storageService');
 
 /**
@@ -67,7 +67,7 @@ router.post('/analyze-roof', async (req, res) => {
 
 /**
  * POST /api/chat
- * Body: { message }
+ * Body: { message, history }
  */
 router.post('/chat', async (req, res) => {
     const { message, history } = req.body;
@@ -77,11 +77,32 @@ router.post('/chat', async (req, res) => {
     }
 
     try {
-        const result = await chatWithAssistant(message, history || []);
-        res.json({ text: result });
+        // Set headers for SSE
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+
+        const streamingResp = await chatWithAssistantStream(message, history || []);
+
+        for await (const chunk of streamingResp.stream) {
+            const part = chunk.candidates[0].content.parts[0].text;
+            if (part) {
+                // Send SSE formatted data
+                res.write(`data: ${JSON.stringify({ text: part })}\n\n`);
+            }
+        }
+
+        res.write('data: [DONE]\n\n');
+        res.end();
     } catch (error) {
         console.error('[AI Route Chat] Error:', error);
-        res.status(500).json({ error: 'Chat failed' });
+        // If headers are already sent, we can't send a JSON error
+        if (!res.headersSent) {
+            res.status(500).json({ error: 'Chat failed' });
+        } else {
+            res.write(`data: ${JSON.stringify({ error: 'Stream interrupted' })}\n\n`);
+            res.end();
+        }
     }
 });
 

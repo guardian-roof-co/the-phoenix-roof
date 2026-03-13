@@ -1,5 +1,4 @@
-import React from 'react';
-import { Mail, MapPin, Star, Phone, ShieldCheck, Heart, ArrowRight } from 'lucide-react';
+import { Mail, MapPin, Phone, ShieldCheck, Heart } from 'lucide-react';
 
 export const About = () => {
    return (
@@ -77,7 +76,47 @@ export const About = () => {
                </div>
             </div>
 
-            {/* Family Values Section */}
+            {/* Owner Section */}
+            <div className="max-w-4xl mx-auto mb-24">
+               <div className="bg-white rounded-[3rem] p-12 border border-slate-100 shadow-xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
+                     <ShieldCheck className="w-64 h-64" />
+                  </div>
+
+                  <div className="relative z-10">
+                     <div className="flex flex-col md:flex-row gap-12 items-center">
+                        <div className="flex-1">
+                           <div className="inline-flex items-center gap-2 bg-slate-100 text-slate-600 px-4 py-1.5 rounded-full mb-6 text-[10px] font-black uppercase tracking-widest">
+                              A Message from the Owner
+                           </div>
+                           <h2 className="text-4xl md:text-5xl font-black text-slate-900 uppercase italic tracking-tighter mb-8 leading-tight">
+                              Meet <span className="text-phoenix-600">Sam Koperski</span>
+                           </h2>
+                           <div className="space-y-6 text-lg text-slate-600 font-medium leading-relaxed italic">
+                              <p>
+                                 "Growing up here in West Michigan, I learned early on that your word is your bond and your work is your legacy. At The Phoenix Roof, we strive to build more than just a roofing company—we provide a service that families can trust implicitly."
+                              </p>
+                              <p>
+                                 "With over two decades of hands-on experience in the industry, I've seen it all. But what never changes is the satisfaction of seeing a homeowner's peace of mind when a job is done right. We treat every roof as if it were protecting our own family, using only the best materials and the most dedicated local craftsmen."
+                              </p>
+                           </div>
+
+                           <div className="mt-10 pt-10 border-t border-slate-100 flex items-center gap-4">
+                              <div className="w-12 h-12 bg-phoenix-600 rounded-full flex items-center justify-center text-white font-black italic">
+                                 SK
+                              </div>
+                              <div>
+                                 <p className="text-slate-900 font-black uppercase italic tracking-tight">Sam Koperski</p>
+                                 <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Owner</p>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+
+            {/* Promise Section */}
             <div className="max-w-3xl mx-auto text-center">
                <Heart className="w-12 h-12 text-phoenix-500 mx-auto mb-6" />
                <h2 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter mb-6">Our Family's Promise to Yours</h2>

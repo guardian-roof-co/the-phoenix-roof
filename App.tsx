@@ -9,13 +9,17 @@ import { RoofEducation } from './components/RoofEducation';
 import { ChatAssistant } from './components/ChatAssistant';
 import { SelfInspection } from './components/SelfInspection';
 import { StormReview } from './components/StormReview';
+import { StormLanding } from './components/StormLanding';
 import { About } from './components/About';
 import { ViewState } from './types';
 import { AuthProvider } from './contexts/AuthContext';
 import { Signup } from './components/Signup';
 import { Certifications } from './components/Certifications';
 import { Testimonials } from './components/Testimonials';
-import { MapPin, Shield, Star, ThumbsUp, Hammer, Wrench, ShieldAlert, CheckCircle2, Bot, ArrowRight, ShieldCheck, FileSearch } from 'lucide-react';
+import { MapPin, Shield, Star, ThumbsUp, Hammer, Wrench, ShieldAlert, CheckCircle2, Bot, ArrowRight, ShieldCheck, FileSearch, Wind } from 'lucide-react';
+import { STORMS } from './data/storms';
+import { StormsIndex } from './components/StormsIndex';
+import { StormAdmin } from './components/StormAdmin';
 
 export default function App() {
   return (
@@ -32,6 +36,8 @@ function AppContent() {
   const [schedulerAddress, setSchedulerAddress] = useState<string>('');
   const [schedulerCost, setSchedulerCost] = useState<number | undefined>(undefined);
   const [schedulerCustomerData, setSchedulerCustomerData] = useState<{ firstName?: string, lastName?: string, email?: string, phone?: string } | null>(null);
+  const [currentSlug, setCurrentSlug] = useState<string | null>(null);
+  const [storms, setStorms] = useState<any[]>(STORMS);
 
   useEffect(() => {
     // Initial UTM extraction
@@ -55,11 +61,49 @@ function AppContent() {
     if (!sessionStorage.getItem('utm_term')) sessionStorage.setItem('utm_term', '');
     if (!sessionStorage.getItem('utm_content')) sessionStorage.setItem('utm_content', '');
 
-    const validViews: ViewState[] = ['home', 'quote', 'insurance', 'maintenance', 'storm', 'education', 'schedule', 'about', 'signup'];
+    const validViews: ViewState[] = ['home', 'quote', 'insurance', 'maintenance', 'storm', 'education', 'schedule', 'about', 'signup', 'storm-landing', 'storms', 'storm-admin'];
+
+    const fetchStorms = async () => {
+      try {
+        const response = await fetch('/api/storm-pages');
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.length > 0) {
+            // Map DB fields to component props if needed
+            const mappedData = data.map((s: any) => ({
+              city: s.city,
+              date: s.date,
+              hailSize: s.hail_size,
+              description: s.description,
+              radarImage: s.radar_image,
+              stormPhotos: s.storm_photos || [],
+              videoEmbed: s.video_embed,
+              affectedAreas: s.affected_areas || [],
+              slug: s.slug
+            }));
+            setStorms(mappedData);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch storms:', err);
+      }
+    };
+
+    fetchStorms();
 
     const getPathFromURL = () => {
-      const path = window.location.pathname.split('/').filter(Boolean)[0];
-      return validViews.includes(path as ViewState) ? (path as ViewState) : 'home';
+      const segments = window.location.pathname.split('/').filter(Boolean);
+      const mainPath = segments[0];
+      
+      if (mainPath === 'storms') {
+        if (segments[1]) {
+          setCurrentSlug(segments[1]);
+          return 'storm-landing';
+        }
+        return 'storms';
+      }
+      
+      return validViews.includes(mainPath as ViewState) ? (mainPath as ViewState) : 'home';
     };
 
     // 1. Initial Path Sync
@@ -80,12 +124,19 @@ function AppContent() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  const handleNavigate = (view: ViewState) => {
-    if (view === currentView) return;
-    const path = view === 'home' ? '/' : `/${view}`;
-    // Update URL without hash for a cleaner look
-    window.history.pushState({ view }, '', path);
+  const handleNavigate = (view: ViewState, slug?: string) => {
+    if (view === currentView && !slug) return;
+    
+    let path = view === 'home' ? '/' : `/${view}`;
+    if (view === 'storm-landing' && slug) {
+      path = `/storms/${slug}`;
+    } else if (view === 'storms') {
+      path = '/storms';
+    }
+
+    window.history.pushState({ view, slug }, '', path);
     setCurrentView(view);
+    setCurrentSlug(slug || null);
     window.scrollTo(0, 0);
   };
 
@@ -307,6 +358,13 @@ function AppContent() {
         return <About />;
       case 'signup':
         return <Signup />;
+      case 'storm-landing':
+        const storm = storms.find(s => s.slug === currentSlug) || storms[0];
+        return <StormLanding storm={storm} onSchedule={(notes, addr, cost, data) => handleScheduleWithNotes(notes || '', addr, cost, data)} />;
+      case 'storms':
+        return <StormsIndex storms={storms} onNavigate={handleNavigate} />;
+      case 'storm-admin':
+        return <StormAdmin onNavigate={handleNavigate} />;
       default:
         return null;
     }

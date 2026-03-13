@@ -9,7 +9,7 @@ declare global {
 
 export type OnScheduleHandler = (notes: string, address?: string, cost?: number, customerData?: any) => void;
 
-export type ViewState = 'home' | 'quote' | 'insurance' | 'maintenance' | 'schedule' | 'education' | 'profile' | 'self-inspection' | 'storm' | 'about' | 'signup';
+export type ViewState = 'home' | 'quote' | 'insurance' | 'maintenance' | 'schedule' | 'education' | 'profile' | 'self-inspection' | 'storm' | 'about' | 'signup' | 'storm-landing' | 'storms' | 'storm-admin';
 
 export interface RoofMaterial {
   id: string;
