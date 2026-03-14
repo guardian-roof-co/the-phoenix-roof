@@ -6,6 +6,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "server:dev": "NODE_ENV=development node server.js",
     "server": "node server.js",
     "start": "node server.js"
   },

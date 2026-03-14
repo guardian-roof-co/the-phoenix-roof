@@ -40,6 +40,9 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentView }) => {
               <button onClick={() => handleNav('storm')} className={`px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-widest transition-all hover:bg-slate-800 ${currentView === 'storm' ? 'text-white bg-phoenix-600' : 'text-slate-300'}`}>
                 Storm Tracker
               </button>
+              <button onClick={() => handleNav('storms')} className={`px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-widest italic transition-all shadow-lg hover:bg-red-700 hover:text-white ${currentView === 'storms' || currentView === 'storm-landing' ? 'text-white bg-red-600' : 'bg-red-600/10 text-red-500'}`}>
+                <div className="flex items-center gap-1.5"><ShieldAlert className="w-3.5 h-3.5" /> Storm Alerts</div>
+              </button>
               <button onClick={() => handleNav('about')} className={`px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-widest transition-all hover:bg-slate-800 ${currentView === 'about' ? 'text-white bg-phoenix-600' : 'text-slate-300'}`}>
                 About Us
               </button>

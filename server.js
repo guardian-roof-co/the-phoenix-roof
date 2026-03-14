@@ -1,7 +1,8 @@
 const express = require('express');
-require('dotenv').config();
-const cors = require('cors');
 const path = require('path');
+const envFile = process.env.NODE_ENV === 'development' ? '.env.development' : '.env';
+require('dotenv').config({ path: path.resolve(__dirname, envFile) });
+const cors = require('cors');
 const { initDB } = require('./backend/config/db');
 
 // Import Routes

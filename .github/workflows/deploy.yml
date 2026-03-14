@@ -14,9 +14,9 @@ on:
 
 env:
   PROJECT_ID: guardian-478113
-  # These can be overridden by Environment Variables in GitHub if different per env
-  SERVICE: ${{ vars.GCP_SERVICE_NAME || 'the-phoenix-roof' }}
-  REGION: ${{ vars.GCP_REGION || 'us-central1' }}
+  # Hardcoded Service Name: 'the-phoenix-roof' for prod, 'the-phoenix-roof-dev' for dev
+  SERVICE: ${{ github.event.inputs.environment == 'prod' && 'the-phoenix-roof' || 'the-phoenix-roof-dev' }}
+  REGION: us-central1
 
 jobs:
   deploy:
