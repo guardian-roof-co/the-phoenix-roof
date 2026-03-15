@@ -138,7 +138,7 @@ export const StormLanding: React.FC<StormLandingProps> = ({ storm, onSchedule })
     };
 
     return (
-        <div className="bg-white min-h-screen text-slate-900 font-sans selection:bg-red-500/30">
+        <div className="bg-white min-h-screen text-slate-900 font-sans selection:bg-red-500/30 overflow-x-hidden">
             {/* HERO SECTION */}
             <section className="relative pt-12 pb-12 lg:pt-16 lg:pb-16 overflow-hidden bg-slate-950">
                 <div className="absolute inset-0 z-0 opacity-20">
@@ -322,17 +322,14 @@ export const StormLanding: React.FC<StormLandingProps> = ({ storm, onSchedule })
                                     return (
                                         <>
                                             {isVideoSlide ? (
-                                                <div className="w-full h-full bg-slate-950 relative flex items-center justify-center cursor-pointer group/video">
-                                                    <div className="absolute inset-0">
-                                                        <div className="w-full h-full bg-slate-900 opacity-50 group-hover/video:opacity-30 transition-opacity"></div>
-                                                    </div>
+                                                <a href="https://www.youtube.com/watch?v=fiK26B6bPM4" target="_blank" rel="noopener noreferrer" className="w-full h-full bg-slate-900 relative flex items-center justify-center cursor-pointer group/video overflow-hidden">
+                                                    <img src="https://img.youtube.com/vi/fiK26B6bPM4/hqdefault.jpg" alt="Storm Footage Preview" className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover/video:opacity-40 transition-opacity duration-300" />
                                                     <div className="relative z-10 text-center">
-                                                        <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-white/30 group-hover/video:bg-red-600 transition-all">
-                                                            <Play className="w-6 h-6 text-white fill-white ml-0.5" />
+                                                        <div className="w-16 h-16 bg-red-600/90 backdrop-blur-md rounded-full flex items-center justify-center mx-auto shadow-2xl border-2 border-white/20 group-hover/video:scale-110 transition-transform duration-300">
+                                                            <Play className="w-7 h-7 text-white fill-white ml-1" />
                                                         </div>
-                                                        <p className="text-white font-black uppercase text-[10px] tracking-[0.2em]">Watch Storm Footage</p>
                                                     </div>
-                                                </div>
+                                                </a>
                                             ) : (
                                                 <img
                                                     src={storm.stormPhotos[currentImageIndex]}
@@ -439,13 +436,13 @@ export const StormLanding: React.FC<StormLandingProps> = ({ storm, onSchedule })
             </section>
 
             {/* INSURANCE PROCESS SECTION */}
-            <section className="py-16 bg-white relative">
+            <section className="py-16 bg-white relative overflow-hidden">
                 <div className="max-w-7xl mx-auto px-4">
-                    <div className="text-center mb-20">
+                    <div className="text-center mb-16 md:mb-20">
                         <h3 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tight italic uppercase">The <span className="text-blue-600">Insurance Process</span></h3>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-12 mb-20">
+                    <div className="grid md:grid-cols-3 gap-16 md:gap-12 mb-20">
                         {[
                             { step: "01", title: "Forensic Evidence", desc: "We document the damage with photos, video, and radar path data before you call insurance." },
                             { step: "02", title: "Claim Filing", desc: "You contact your carrier with the data we provide. We help explain the documentation to the adjuster." },
@@ -459,11 +456,11 @@ export const StormLanding: React.FC<StormLandingProps> = ({ storm, onSchedule })
                         ))}
                     </div>
 
-                    <div className="grid lg:grid-cols-2 gap-12 items-start">
-                        <div className="bg-slate-950 rounded-[3rem] p-10 lg:p-14 text-white shadow-2xl relative overflow-hidden">
+                    <div className="grid lg:grid-cols-2 gap-8 md:gap-12 items-start">
+                        <div className="bg-slate-950 rounded-[2rem] md:rounded-[3rem] p-8 md:p-14 text-white shadow-2xl relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-red-600 blur-[80px] opacity-20"></div>
                             <h4 className="text-2xl font-black uppercase italic mb-8 text-red-500 flex items-center gap-3">
-                                <XCircle className="w-6 h-6" /> Common Pitfalls
+                                <XCircle className="w-6 h-6 shrink-0" /> Common Pitfalls
                             </h4>
                             <ul className="space-y-6">
                                 {[
@@ -471,14 +468,14 @@ export const StormLanding: React.FC<StormLandingProps> = ({ storm, onSchedule })
                                     { t: "Not Enough Documentation", d: "Generic photos aren't enough. Claims fail because there isn't scientific proof of hail impact." },
                                     { t: "Trusting Verbal Promises", d: "If a contractor 'promises' a covered claim, they are being dishonest. Only the carrier approves claims." }
                                 ].map((item, i) => (
-                                    <li key={i} className="border-l-4 border-slate-800 pl-6 py-2">
+                                    <li key={i} className="border-l-4 border-slate-800 pl-4 md:pl-6 py-2">
                                         <p className="font-black uppercase text-sm mb-1">{item.t}</p>
                                         <p className="text-slate-400 text-sm font-medium">{item.d}</p>
                                     </li>
                                 ))}
                             </ul>
                         </div>
-                        <div className="bg-blue-600 rounded-[3rem] p-10 lg:p-14 text-white shadow-2xl">
+                        <div className="bg-blue-600 rounded-[2rem] md:rounded-[3rem] p-8 md:p-14 text-white shadow-2xl">
                             <h4 className="text-2xl font-black uppercase italic mb-8 flex items-center gap-3">
                                 <ClipboardCheck className="w-6 h-6" /> Why Documentation Matters
                             </h4>
@@ -503,20 +500,20 @@ export const StormLanding: React.FC<StormLandingProps> = ({ storm, onSchedule })
             <section className="py-16 bg-slate-50 border-t border-slate-200">
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="text-center mb-16 flex flex-col items-center">
-                        <h2 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tight italic uppercase mb-4">The Phoenix Standard</h2>
-                        <h3 className="text-lg md:text-2xl font-black text-slate-500 uppercase tracking-[0.2em] italic mb-8">Forensic Inspectors, <span className="text-red-600">Not Salesmen</span></h3>
-                        <div className="inline-flex items-center gap-3 bg-blue-600 text-white px-6 py-3 rounded-full shadow-lg group hover:bg-blue-700 transition-all duration-300">
-                            <MapPin className="w-5 h-5 animate-pulse group-hover:animate-bounce" />
-                            <span className="text-xs md:text-sm font-black uppercase tracking-[0.25em]">Locally owned in Grand Rapids, MI</span>
+                        <h2 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tight italic uppercase mb-2 md:mb-4 text-center">The Phoenix Standard</h2>
+                        <h3 className="text-base md:text-2xl font-black text-slate-500 uppercase tracking-[0.2em] italic mb-8 text-center leading-relaxed">Forensic Inspectors, <br className="md:hidden" /><span className="text-red-600">Not Salesmen</span></h3>
+                        <div className="inline-flex flex-col md:flex-row items-center gap-2 md:gap-3 bg-blue-600 text-white px-6 py-3 md:py-3 rounded-[2rem] shadow-lg group hover:bg-blue-700 transition-all duration-300 text-center mx-4">
+                            <MapPin className="w-5 h-5 animate-pulse group-hover:animate-bounce shrink-0 hidden md:block" />
+                            <span className="text-[10px] md:text-sm font-black uppercase tracking-[0.2em]">Locally owned in Grand Rapids, MI</span>
                         </div>
                     </div>
 
 
                     <div className="relative mb-20 group">
-                        <div className="overflow-hidden px-4 md:px-0">
+                        <div className="overflow-hidden px-0 md:px-0">
                             <div
-                                className="flex transition-transform duration-700 ease-in-out gap-4"
-                                style={{ transform: `translateX(-${currentCertIndex * (100 / (window.innerWidth >= 768 ? 3 : 1))}%)` }}
+                                className="flex transition-transform duration-700 ease-in-out"
+                                style={{ transform: `translateX(-${currentCertIndex * (typeof window !== 'undefined' && window.innerWidth >= 768 ? 33.333333 : 100)}%)` }}
                             >
                                 {[
                                     { title: "HAAG Certified Inspector", icon: "/certifications/haag-certified.png" },
@@ -528,8 +525,8 @@ export const StormLanding: React.FC<StormLandingProps> = ({ storm, onSchedule })
                                     { title: "Asphalt Shingle Roof Forensic Inspector", icon: "/certifications/bei-main.png" },
                                     { title: "Temporary Repairs to Roof Coverings", icon: "/certifications/haag-repairs.jpg" }
                                 ].map((cert, i) => (
-                                    <div key={i} className="min-w-full md:min-w-[calc(33.333%-0.75rem)] flex-shrink-0">
-                                        <div className="bg-white p-6 md:p-8 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col items-center text-center h-full min-h-[220px] md:min-h-[260px] justify-center">
+                                    <div key={i} className="min-w-full md:min-w-[33.333333%] flex-shrink-0 px-2 lg:px-4">
+                                        <div className="bg-white p-6 md:p-8 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col items-center text-center h-full min-h-[220px] md:min-h-[260px] justify-center mx-2 md:mx-0">
                                             <div className="w-28 h-20 md:w-40 md:h-28 mb-6">
                                                 <img src={cert.icon} alt={cert.title} className="w-full h-full object-contain" />
                                             </div>
@@ -543,13 +540,13 @@ export const StormLanding: React.FC<StormLandingProps> = ({ storm, onSchedule })
                         {/* Navigation Arrows */}
                         <button
                             onClick={() => setCurrentCertIndex(prev => (prev === 0 ? 5 : prev - 1))}
-                            className="absolute left-0 top-1/2 -translate-y-1/2 w-10 h-10 bg-white border border-slate-100 rounded-full flex items-center justify-center text-slate-300 hover:text-red-600 hover:border-red-600 shadow-sm transition-all -ml-5 z-30 opacity-0 group-hover:opacity-100"
+                            className="absolute left-0 top-1/2 -translate-y-1/2 w-10 h-10 bg-white border border-slate-100 rounded-full hidden md:flex items-center justify-center text-slate-300 hover:text-red-600 hover:border-red-600 shadow-sm transition-all -ml-5 z-30 opacity-0 group-hover:opacity-100"
                         >
                             <ChevronLeft className="w-5 h-5" />
                         </button>
                         <button
                             onClick={() => setCurrentCertIndex(prev => (prev === 5 ? 0 : prev + 1))}
-                            className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 bg-white border border-slate-100 rounded-full flex items-center justify-center text-slate-300 hover:text-red-600 hover:border-red-600 shadow-sm transition-all -mr-5 z-30 opacity-0 group-hover:opacity-100"
+                            className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 bg-white border border-slate-100 rounded-full hidden md:flex items-center justify-center text-slate-300 hover:text-red-600 hover:border-red-600 shadow-sm transition-all -mr-5 z-30 opacity-0 group-hover:opacity-100"
                         >
                             <ChevronRight className="w-5 h-5" />
                         </button>
@@ -565,8 +562,8 @@ export const StormLanding: React.FC<StormLandingProps> = ({ storm, onSchedule })
                         </div>
                     </div>
 
-                    <div className="grid lg:grid-cols-2 gap-12 items-center">
-                        <div className="bg-white p-8 lg:p-10 rounded-[3rem] shadow-xl border border-slate-100">
+                    <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+                        <div className="bg-white p-6 md:p-8 lg:p-10 rounded-[2rem] md:rounded-[3rem] shadow-xl border border-slate-100 w-full overflow-hidden">
                             {/* CLIENT TESTIMONIALS SECTION */}
                             <div className="mb-6 text-center lg:text-left">
                                 <h3 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight italic uppercase mb-2">Client <span className="text-blue-600">Testimonials</span></h3>
@@ -607,7 +604,7 @@ export const StormLanding: React.FC<StormLandingProps> = ({ storm, onSchedule })
                                             date: "3 weeks ago"
                                         }
                                     ].map((review, i) => (
-                                        <div key={i} className="min-w-full">
+                                        <div key={i} className="min-w-full w-full shrink-0">
                                             <div className="flex text-amber-400 mb-6">
                                                 {[...Array(review.rating)].map((_, i) => (
                                                     <Star key={i} className="w-5 h-5 fill-current" />
@@ -641,16 +638,16 @@ export const StormLanding: React.FC<StormLandingProps> = ({ storm, onSchedule })
                             </div>
                         </div>
 
-                        <div className="text-left py-8">
-                            <h4 className="text-3xl font-black uppercase italic text-slate-900 mb-6 leading-none">See why we are <span className="text-red-600">different.</span></h4>
-                            <p className="text-slate-500 font-medium text-lg leading-relaxed mb-10">
+                        <div className="text-center md:text-left py-8">
+                            <h4 className="text-2xl md:text-3xl font-black uppercase italic text-slate-900 mb-6 leading-tight">See why we are <br className="hidden md:block"/><span className="text-red-600">different.</span></h4>
+                            <p className="text-slate-500 font-medium text-base md:text-lg leading-relaxed mb-8 md:mb-10 mx-auto md:mx-0 max-w-sm">
                                 Most contractors want to sell you a roof. We want to provide you with a forensic assessment of your property's structural integrity.
                             </p>
                             <button
                                 onClick={() => window.open('https://www.canva.com/design/DAHDqPdwVkw/1vcYb1AHjA5UE8cgLkcCbA/view', '_blank')}
-                                className="inline-flex items-center gap-3 text-slate-900 font-black uppercase text-sm md:text-base tracking-widest hover:text-red-600 transition-colors border-b-4 border-red-600 pb-2"
+                                className="inline-flex flex-wrap justify-center md:justify-start items-center gap-2 md:gap-3 text-slate-900 font-black uppercase text-xs md:text-sm tracking-widest hover:text-red-600 transition-colors border-b-4 border-red-600 pb-2 break-words"
                             >
-                                Sample inspection report <ArrowRight className="w-5 h-5" />
+                                <span>Sample inspection report</span> <ArrowRight className="w-4 h-4 md:w-5 md:h-5 shrink-0" />
                             </button>
                         </div>
                     </div>
@@ -666,12 +663,12 @@ export const StormLanding: React.FC<StormLandingProps> = ({ storm, onSchedule })
                         <p className="text-slate-400 font-bold max-w-2xl mx-auto text-lg uppercase tracking-widest opacity-80">Already had a door knocker visit? Compare the difference.</p>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
-                        <div className="bg-white/5 backdrop-blur-md rounded-[3rem] p-10 lg:p-14 border border-white/10 group hover:border-red-600/30 transition-all">
-                            <h4 className="text-3xl font-black uppercase italic mb-10 flex items-center gap-4 text-red-500">
-                                <ShieldCheck className="w-8 h-8" /> Phoenix Provides:
+                    <div className="grid md:grid-cols-2 gap-6 lg:gap-16">
+                        <div className="bg-white/5 backdrop-blur-md rounded-[2.5rem] md:rounded-[3rem] p-8 md:p-14 border border-white/10 group hover:border-red-600/30 transition-all">
+                            <h4 className="text-2xl md:text-3xl font-black uppercase italic mb-8 md:mb-10 flex items-center gap-3 md:gap-4 text-red-500">
+                                <ShieldCheck className="w-8 h-8 shrink-0" /> Phoenix Provides:
                             </h4>
-                            <ul className="space-y-6">
+                            <ul className="space-y-4 md:space-y-6">
                                 {[
                                     "Detailed, free, forensic report",
                                     "No obligations/contingencies",
@@ -680,16 +677,16 @@ export const StormLanding: React.FC<StormLandingProps> = ({ storm, onSchedule })
                                 ].map((item, i) => (
                                     <li key={i} className="flex items-center gap-4">
                                         <CheckCircle className="w-6 h-6 text-green-500 shrink-0" />
-                                        <p className="font-bold opacity-90">{item}</p>
+                                        <p className="font-bold opacity-90 text-sm md:text-base">{item}</p>
                                     </li>
                                 ))}
                             </ul>
                         </div>
-                        <div className="bg-red-950/30 backdrop-blur-md rounded-[3rem] p-10 lg:p-14 border border-red-900/30 group hover:border-red-600/30 transition-all">
-                            <h4 className="text-3xl font-black uppercase italic mb-10 flex items-center gap-4 text-slate-300">
-                                <AlertTriangle className="w-8 h-8 text-yellow-500" /> Seek a Second Opinion If:
+                        <div className="bg-red-950/30 backdrop-blur-md rounded-[2.5rem] md:rounded-[3rem] p-8 md:p-14 border border-red-900/30 group hover:border-red-600/30 transition-all">
+                            <h4 className="text-2xl md:text-3xl font-black uppercase italic mb-8 md:mb-10 flex items-start md:items-center gap-3 md:gap-4 text-slate-300">
+                                <AlertTriangle className="w-8 h-8 text-yellow-500 shrink-0 mt-1 md:mt-0" /> Seek a Second Opinion If:
                             </h4>
-                            <ul className="space-y-6">
+                            <ul className="space-y-4 md:space-y-6">
                                 {[
                                     "Limited photos and promises of a covered claim",
                                     "Someone promised you a covered claim",
@@ -719,25 +716,25 @@ export const StormLanding: React.FC<StormLandingProps> = ({ storm, onSchedule })
                             <p className="text-2xl font-black uppercase italic mb-12 tracking-widest opacity-80 leading-relaxed">
                                 SECURE YOUR FORENSIC SPOT BEFORE THE DEADLINES HIT.
                             </p>
-                            <div className="flex flex-col sm:flex-row gap-6">
+                            <div className="flex flex-col sm:flex-row gap-4 md:gap-6">
                                 <a
                                     href="tel:6163194245"
-                                    className="bg-slate-950 text-white px-10 py-6 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-black transition-all shadow-2xl"
+                                    className="bg-slate-950 text-white px-8 py-5 md:px-10 md:py-6 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-black transition-all shadow-2xl text-sm md:text-base"
                                 >
                                     <Phone className="w-5 h-5" /> Call 616-319-HAIL
                                 </a>
                                 <button
                                     onClick={handleTextClick}
-                                    className="bg-white text-red-600 px-10 py-6 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-slate-50 transition-all shadow-2xl"
+                                    className="bg-white text-red-600 px-8 py-5 md:px-10 md:py-6 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-slate-50 transition-all shadow-2xl text-sm md:text-base"
                                 >
                                     <MessageSquare className="w-5 h-5" /> Text ROOF to 616
                                 </button>
                             </div>
                         </div>
-                        <div className="bg-white rounded-[3rem] p-10 lg:p-14 shadow-2xl">
+                        <div className="bg-white rounded-[2.5rem] md:rounded-[3rem] p-8 lg:p-14 shadow-2xl">
                             {!submitted ? (
                                 <>
-                                    <h4 className="text-2xl font-black text-slate-900 uppercase italic mb-8 text-center">Repeat Your <br /> <span className="text-red-600">Free Inspection Request</span></h4>
+                                    <h4 className="text-xl md:text-2xl font-black text-slate-900 uppercase italic mb-8 text-center">Request a <br /> <span className="text-red-600">Free Forensic Inspection</span></h4>
                                     <form onSubmit={handleSubmit} className="space-y-4">
                                         <input
                                             type="text"

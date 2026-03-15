@@ -3,15 +3,15 @@ import { Flame, Menu, X, CloudLightning, Ruler, Home, ShieldCheck, Bot, User, He
 import { ViewState } from '../types';
 
 interface HeaderProps {
-  onNavigate: (view: ViewState) => void;
+  onNavigate: (view: ViewState, slug?: string) => void;
   currentView: ViewState;
 }
 
 export const Header: React.FC<HeaderProps> = ({ onNavigate, currentView }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const handleNav = (view: ViewState) => {
-    onNavigate(view);
+  const handleNav = (view: ViewState, slug?: string) => {
+    onNavigate(view, slug);
     setIsMenuOpen(false);
   };
 
@@ -40,7 +40,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentView }) => {
               <button onClick={() => handleNav('storm')} className={`px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-widest transition-all hover:bg-slate-800 ${currentView === 'storm' ? 'text-white bg-phoenix-600' : 'text-slate-300'}`}>
                 Storm Tracker
               </button>
-              <button onClick={() => handleNav('storms')} className={`px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-widest italic transition-all shadow-lg hover:bg-red-700 hover:text-white ${currentView === 'storms' || currentView === 'storm-landing' ? 'text-white bg-red-600' : 'bg-red-600/10 text-red-500'}`}>
+              <button onClick={() => handleNav('storm-landing', 'jenison-hail-march-2026')} className={`px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-widest italic transition-all shadow-lg hover:bg-red-700 hover:text-white ${currentView === 'storms' || currentView === 'storm-landing' ? 'text-white bg-red-600' : 'bg-red-600/10 text-red-500'}`}>
                 <div className="flex items-center gap-1.5"><ShieldAlert className="w-3.5 h-3.5" /> Storm Alerts</div>
               </button>
               <button onClick={() => handleNav('about')} className={`px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-widest transition-all hover:bg-slate-800 ${currentView === 'about' ? 'text-white bg-phoenix-600' : 'text-slate-300'}`}>
@@ -68,7 +68,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentView }) => {
                 <button onClick={() => handleNav('quote')} className="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800 transition-colors flex items-center gap-3 text-sm font-bold text-slate-300"><Ruler className="w-4 h-4 text-phoenix-500" /> Get a Quote</button>
                 <button onClick={() => handleNav('insurance')} className="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800 transition-colors flex items-center gap-3 text-sm font-bold text-slate-300"><Bot className="w-4 h-4 text-blue-500" /> Policy Review</button>
                 <button onClick={() => handleNav('storm')} className="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800 transition-colors flex items-center gap-3 text-sm font-bold text-slate-300"><CloudLightning className="w-4 h-4 text-fire-500" /> Storm Tracker</button>
-                <button onClick={() => handleNav('storms')} className="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800 transition-colors flex items-center gap-3 text-sm font-bold text-red-500 font-black italic"><ShieldAlert className="w-4 h-4" /> STORM ALERTS</button>
+                <button onClick={() => handleNav('storm-landing', 'jenison-hail-march-2026')} className="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800 transition-colors flex items-center gap-3 text-sm font-bold text-red-500 font-black italic"><ShieldAlert className="w-4 h-4" /> STORM ALERTS</button>
                 <button onClick={() => handleNav('education')} className="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800 transition-colors flex items-center gap-3 text-sm font-bold text-slate-300"><ShieldCheck className="w-4 h-4 text-green-500" /> Education</button>
                 <button onClick={() => handleNav('signup')} className="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800 transition-colors flex items-center gap-3 text-sm font-bold text-slate-300"><User className="w-4 h-4 text-phoenix-500" /> Signup</button>
                 <button onClick={() => handleNav('about')} className="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800 transition-colors flex items-center gap-3 text-sm font-bold text-slate-300"><Heart className="w-4 h-4 text-phoenix-600" /> About Us</button>

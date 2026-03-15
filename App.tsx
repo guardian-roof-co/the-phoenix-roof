@@ -95,6 +95,12 @@ function AppContent() {
       const segments = window.location.pathname.split('/').filter(Boolean);
       const mainPath = segments[0];
       
+      if (!mainPath) {
+        window.history.replaceState({ view: 'storm-landing', slug: 'jenison-hail-march-2026' }, '', '/storms/jenison-hail-march-2026');
+        setCurrentSlug('jenison-hail-march-2026');
+        return 'storm-landing';
+      }
+
       if (mainPath === 'storms') {
         if (segments[1]) {
           setCurrentSlug(segments[1]);
@@ -127,7 +133,7 @@ function AppContent() {
   const handleNavigate = (view: ViewState, slug?: string) => {
     if (view === currentView && !slug) return;
     
-    let path = view === 'home' ? '/' : `/${view}`;
+    let path = view === 'home' ? '/home' : `/${view}`;
     if (view === 'storm-landing' && slug) {
       path = `/storms/${slug}`;
     } else if (view === 'storms') {
